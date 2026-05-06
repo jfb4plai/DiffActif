@@ -22,6 +22,8 @@ export default function Module2_Adapter() {
   const [importError, setImportError] = useState('')
   const [importedFile, setImportedFile] = useState('')
   const [dragOver, setDragOver]   = useState(false)
+  const [hasDoutes, setHasDoutes] = useState(false)
+  const [nbDoutes, setNbDoutes]   = useState(0)
 
   // Génération IA
   const [generating, setGenerating] = useState(false)
@@ -51,10 +53,14 @@ export default function Module2_Adapter() {
     setImportedFile(file.name)
     setResultat('')
     setSaved(false)
+    setHasDoutes(false)
+    setNbDoutes(0)
 
     try {
-      const text = await extractFile(file)
+      const { text, hasDoutes: hd, nbDoutes: nb } = await extractFile(file)
       setActivite(text)
+      setHasDoutes(hd)
+      setNbDoutes(nb)
     } catch (err) {
       setImportError(err.message)
       setImportedFile('')
@@ -236,10 +242,20 @@ export default function Module2_Adapter() {
             {importError && (
               <p className="text-xs text-red-500 mt-1">{importError}</p>
             )}
-            {importedFile && !importing && (
+            {importedFile && !importing && !hasDoutes && (
               <p className="text-xs text-gray-400 mt-1">
-                Texte extrait ci-dessous — vérifiez et complétez si nécessaire avant de générer.
+                Texte extrait — vérifiez avant de générer.
               </p>
+            )}
+            {importedFile && !importing && hasDoutes && (
+              <div className="mt-2 flex items-start gap-2 rounded-lg bg-amber-50 border border-amber-200 px-3 py-2">
+                <span className="text-amber-500 text-sm mt-0.5">⚠</span>
+                <p className="text-xs text-amber-800">
+                  <strong>{nbDoutes} passage{nbDoutes > 1 ? 's' : ''} incertain{nbDoutes > 1 ? 's' : ''}</strong> détecté{nbDoutes > 1 ? 's' : ''} — signalés{' '}
+                  <code className="bg-amber-100 px-1 rounded">[? ... ?]</code> dans le texte ci-dessous.
+                  Corrigez-les avant de générer.
+                </p>
+              </div>
             )}
           </div>
 
