@@ -1,7 +1,7 @@
 /**
- * Vercel Serverless Function — Extraction de texte depuis PDF ou DOCX
+ * Vercel Serverless Function — OCR via Claude Vision
  * Route : POST /api/extract
- * Body  : { fileContent: string (base64), fileName: string }
+ * Body  : { images: string[] }  // base64 JPEG, max 6 pages
  * Return: { text: string }
  */
 
@@ -10,42 +10,36 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Méthode non autorisée' })
   }
 
-  const { fileContent, fileName } = req.body
-  if (!fileContent || !fileName) {
-    return res.status(400).json({ error: 'fileContent et fileName sont requis' })
+  const { images } = req.body
+  if (!images || !Array.isArray(images) || images.length === 0) {
+    return res.status(400).json({ error: 'images[] requis' })
   }
 
-  const ext = fileName.split('.').pop().toLowerCase()
-  const buffer = Buffer.from(fileContent, 'base64')
-
   try {
-    let text = ''
+    const Anthropic = (await import('@anthropic-ai/sdk')).default
+    const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 
-    if (ext === 'pdf') {
-      const { extractText } = await import('unpdf')
-      const { text: pages } = await extractText(new Uint8Array(buffer), { mergePages: true })
-      text = Array.isArray(pages) ? pages.join('\n\n') : pages
-    } else if (ext === 'docx') {
-      const mammoth = (await import('mammoth')).default
-      const result = await mammoth.extractRawText({ buffer })
-      text = result.value
-    } else {
-      return res.status(400).json({ error: 'Format non supporté. Utilisez PDF ou DOCX.' })
-    }
+    const content = [
+      ...images.map(img => ({
+        type: 'image',
+        source: { type: 'base64', media_type: 'image/jpeg', data: img },
+      })),
+      {
+        type: 'text',
+        text: 'Extrais tout le texte visible dans ces pages de document scolaire. Retourne uniquement le texte extrait, en respectant la structure (paragraphes, numérotations). Sans commentaire ni explication.',
+      },
+    ]
 
-    // Nettoyage basique du texte extrait
-    text = text
-      .replace(/\r\n/g, '\n')
-      .replace(/\n{3,}/g, '\n\n')
-      .trim()
+    const response = await client.messages.create({
+      model: 'claude-haiku-4-5-20251001',
+      max_tokens: 4096,
+      messages: [{ role: 'user', content }],
+    })
 
-    if (!text) {
-      return res.status(422).json({ error: 'Aucun texte extrait — le fichier est peut-être scanné ou protégé.' })
-    }
-
+    const text = response.content[0].text.trim()
     return res.status(200).json({ text })
 
   } catch (err) {
-    return res.status(500).json({ error: `Erreur d'extraction : ${err.message}` })
+    return res.status(500).json({ error: `Erreur OCR : ${err.message}` })
   }
 }
