@@ -449,32 +449,71 @@ export async function exportProfilDocx({
   saveAs(blob, `DiffActif_${slug}_${matiere || 'cours'}_${new Date().toISOString().split('T')[0]}.docx`)
 }
 
-// Parse le texte AU (applique bold sur **verbe**)
+// ──────────────────────────────────────────
+// Règle "Même Plan" (AU fondamental FWB — non négociable)
+// Consigne + tâche TOUJOURS sur la même page.
+// keepNext: true → colle ce paragraphe au suivant (Word respecte cette contrainte)
+// keepLines: true → ne coupe pas un paragraphe en deux pages
+// pageBreakBefore: true → saut de page explicite (changement de section/matière)
+// ──────────────────────────────────────────
+
+// Retourne true si la ligne suivante non-vide est un titre ou si la prochaine est vide
+function isEndOfBlock(lines, currentIndex) {
+  const next = lines[currentIndex + 1]
+  if (next === undefined) return true          // dernière ligne
+  if (next.trim() === '') return true          // ligne vide = fin de bloc
+  return false
+}
+
+// Détecte un marqueur de saut de page explicite dans le texte
+function isPageBreakMarker(line) {
+  return /^---\s*(page|saut|nouvelle\s*page|changement)/i.test(line.trim())
+    || /^\[saut.de.page\]/i.test(line.trim())
+}
+
+// Parse le texte AU (applique bold sur **verbe**, règle Même Plan)
 function parseAuText(text) {
   if (!text) return [new Paragraph({ text: '—' })]
-  return text.split('\n').map(line => {
-    const trimmed = line.trim()
-    if (!trimmed) return spacer()
-    // Détecte les titres de niveau (ex: "# Exercice 1" ou "Exercice 1 —")
-    const isTitle = /^#{1,3}\s/.test(trimmed) || /^(Exercice|Séance|Étape)\s+\d+/i.test(trimmed)
+
+  const paragraphs = []
+  const lines = text.split('\n')
+
+  for (let i = 0; i < lines.length; i++) {
+    const trimmed = lines[i].trim()
+
+    if (!trimmed) { paragraphs.push(spacer()); continue }
+
+    if (isPageBreakMarker(trimmed)) {
+      paragraphs.push(new Paragraph({ text: '', pageBreakBefore: true }))
+      continue
+    }
+
+    const isTitle = /^#{1,3}\s/.test(trimmed) || /^(Exercice|Séance|Étape|Section|Partie)\s+\d*/i.test(trimmed)
+    const endOfBlock = isEndOfBlock(lines, i)
+
     if (isTitle) {
-      return new Paragraph({
+      paragraphs.push(new Paragraph({
         children: [new TextRun({ text: trimmed.replace(/^#+\s*/, ''), bold: true, size: 24, color: BRAND_TEAL })],
         spacing: { before: 240, after: 80 },
-      })
+        keepNext: true,   // consigne TOUJOURS avec sa tâche
+        keepLines: true,
+      }))
+    } else {
+      // Remplace **mot** par TextRun bold (verbes d'action AU)
+      const parts = trimmed.split(/(\*\*[^*]+\*\*)/)
+      paragraphs.push(new Paragraph({
+        children: parts.map(part =>
+          part.startsWith('**') && part.endsWith('**')
+            ? new TextRun({ text: part.slice(2, -2), bold: true, size: 22 })
+            : new TextRun({ text: part, size: 22 })
+        ),
+        spacing: { after: 120 },
+        keepLines: true,
+        keepNext: !endOfBlock,  // chaîne avec le suivant sauf fin de bloc
+      }))
     }
-    // Remplace **mot** par TextRun bold
-    const parts = trimmed.split(/(\*\*[^*]+\*\*)/)
-    return new Paragraph({
-      children: parts.map(part => {
-        if (part.startsWith('**') && part.endsWith('**')) {
-          return new TextRun({ text: part.slice(2, -2), bold: true, size: 22 })
-        }
-        return new TextRun({ text: part, size: 22 })
-      }),
-      spacing: { after: 120 },
-    })
-  })
+  }
+  return paragraphs
 }
 
 // Parse le texte des adaptations (séparé par profil via "[PROFIL] —")
@@ -484,58 +523,74 @@ function parseAdaptations(text) {
   const paragraphs = []
   const lines = text.split('\n')
 
-  for (const line of lines) {
-    const trimmed = line.trim()
-    if (!trimmed) {
-      paragraphs.push(spacer())
-      continue
-    }
+  for (let i = 0; i < lines.length; i++) {
+    const trimmed = lines[i].trim()
+    if (!trimmed) { paragraphs.push(spacer()); continue }
 
-    // Ligne de profil (ex: "[DYSLEXIE] —" ou "DYSLEXIE —")
+    const endOfBlock = isEndOfBlock(lines, i)
+
+    // En-tête de profil (ex: "[DYSLEXIE] —" ou "DYSLEXIE —")
     const isProfileHeader = /^[\[A-ZÀÂÉÈÊËÎÏÔÙÛÜ\s\/]+[\]—\-:]/.test(trimmed) && trimmed.length < 80
     if (isProfileHeader) {
       paragraphs.push(new Paragraph({
         children: [new TextRun({ text: trimmed, bold: true, size: 24, color: BRAND_TEAL })],
         spacing: { before: 240, after: 80 },
+        keepNext: true,   // garde l'en-tête avec le contenu qui suit
+        keepLines: true,
       }))
     } else {
       paragraphs.push(new Paragraph({
         children: [new TextRun({ text: trimmed, size: 22 })],
         spacing: { after: 80 },
         indent: { left: 360 },
+        keepLines: true,
+        keepNext: !endOfBlock,
       }))
     }
   }
   return paragraphs
 }
 
-// Parse le texte de séquence (étapes numérotées)
+// Parse le texte de séquence (étapes numérotées, règle Même Plan)
 function parseSequence(text) {
   if (!text) return [new Paragraph({ text: '—' })]
 
   const paragraphs = []
   const lines = text.split('\n')
 
-  for (const line of lines) {
-    const trimmed = line.trim()
+  for (let i = 0; i < lines.length; i++) {
+    const trimmed = lines[i].trim()
     if (!trimmed) { paragraphs.push(spacer()); continue }
 
+    if (isPageBreakMarker(trimmed)) {
+      paragraphs.push(new Paragraph({ text: '', pageBreakBefore: true }))
+      continue
+    }
+
+    const endOfBlock = isEndOfBlock(lines, i)
     const isStep = /^(Étape|Séance|Step|\d+[.):])\s/i.test(trimmed)
+
     if (isStep) {
       paragraphs.push(new Paragraph({
         children: [new TextRun({ text: trimmed, bold: true, size: 24, color: BRAND_TEAL })],
         spacing: { before: 280, after: 80 },
+        keepNext: true,
+        keepLines: true,
       }))
     } else if (trimmed.startsWith('-') || trimmed.startsWith('•')) {
       paragraphs.push(new Paragraph({
         children: [new TextRun({ text: trimmed, size: 22 })],
         spacing: { after: 60 },
         indent: { left: 360 },
+        keepLines: true,
+        keepNext: !endOfBlock,
       }))
     } else {
       paragraphs.push(new Paragraph({
         children: [new TextRun({ text: trimmed, size: 22 })],
         spacing: { after: 80 },
+        keepLines: true,
+        keepNext: !endOfBlock,
       }))
     }
   }
