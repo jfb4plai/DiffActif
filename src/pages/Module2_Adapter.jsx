@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../contexts/AuthContext'
 import { PROFILS, NIVEAUX, TYPES_ENSEIGNEMENT } from '../lib/constants'
@@ -14,6 +14,13 @@ export default function Module2_Adapter() {
   const [typeEns, setTypeEns]     = useState(profile?.type_enseignement ?? '')
   const [matiere, setMatiere]     = useState(profile?.matiere ?? '')
 
+  // Import fichier
+  const fileInputRef              = useRef(null)
+  const [importing, setImporting] = useState(false)
+  const [importError, setImportError] = useState('')
+  const [importedFile, setImportedFile] = useState('')
+  const [dragOver, setDragOver]   = useState(false)
+
   // Génération IA
   const [generating, setGenerating] = useState(false)
   const [resultat, setResultat]     = useState('')
@@ -23,6 +30,54 @@ export default function Module2_Adapter() {
   const [texteFinal, setTexteFinal] = useState('')
   const [saved, setSaved]           = useState(false)
   const [saving, setSaving]         = useState(false)
+
+  async function handleFile(file) {
+    if (!file) return
+    const ext = file.name.split('.').pop().toLowerCase()
+    if (!['pdf', 'docx'].includes(ext)) {
+      setImportError('Format non supporté — utilisez PDF ou DOCX.')
+      return
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setImportError('Fichier trop lourd (max 5 Mo).')
+      return
+    }
+
+    setImporting(true)
+    setImportError('')
+    setImportedFile(file.name)
+    setResultat('')
+    setSaved(false)
+
+    try {
+      const arrayBuffer = await file.arrayBuffer()
+      const base64 = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)))
+
+      const res = await fetch('/api/extract', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ fileContent: base64, fileName: file.name }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error ?? 'Erreur extraction')
+      setActivite(data.text)
+    } catch (err) {
+      setImportError(err.message)
+      setImportedFile('')
+    }
+    setImporting(false)
+  }
+
+  function onFileInput(e) {
+    handleFile(e.target.files[0])
+    e.target.value = ''
+  }
+
+  function onDrop(e) {
+    e.preventDefault()
+    setDragOver(false)
+    handleFile(e.dataTransfer.files[0])
+  }
 
   function toggleProfil(val) {
     setProfilsChoisis(prev =>
@@ -125,6 +180,67 @@ export default function Module2_Adapter() {
       <div className="card">
         <h2 className="font-semibold text-gray-800 mb-4">2. Activité à adapter</h2>
         <div className="space-y-4">
+
+          {/* Zone d'import fichier */}
+          <div>
+            <label className="label">Importer un fichier (PDF ou DOCX)</label>
+            <div
+              onDragOver={e => { e.preventDefault(); setDragOver(true) }}
+              onDragLeave={() => setDragOver(false)}
+              onDrop={onDrop}
+              onClick={() => fileInputRef.current?.click()}
+              className={`border-2 border-dashed rounded-xl p-5 text-center cursor-pointer transition-all ${
+                dragOver
+                  ? 'border-brand-500 bg-brand-50'
+                  : 'border-gray-300 hover:border-brand-400 hover:bg-gray-50'
+              }`}
+            >
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".pdf,.docx"
+                className="hidden"
+                onChange={onFileInput}
+              />
+              {importing ? (
+                <p className="text-sm text-brand-600 font-medium">Extraction en cours...</p>
+              ) : importedFile ? (
+                <div className="flex items-center justify-center gap-2">
+                  <span className="text-green-600 text-lg">✓</span>
+                  <span className="text-sm text-green-700 font-medium">{importedFile}</span>
+                  <button
+                    onClick={e => { e.stopPropagation(); setImportedFile(''); setActivite('') }}
+                    className="text-xs text-gray-400 hover:text-red-500 ml-2"
+                  >
+                    ✕
+                  </button>
+                </div>
+              ) : (
+                <>
+                  <div className="text-2xl mb-1">📄</div>
+                  <p className="text-sm text-gray-600 font-medium">
+                    Glisser-déposer un fichier ou <span className="text-brand-600 underline">parcourir</span>
+                  </p>
+                  <p className="text-xs text-gray-400 mt-1">PDF · DOCX — max 5 Mo</p>
+                </>
+              )}
+            </div>
+            {importError && (
+              <p className="text-xs text-red-500 mt-1">{importError}</p>
+            )}
+            {importedFile && !importing && (
+              <p className="text-xs text-gray-400 mt-1">
+                Texte extrait ci-dessous — vérifiez et complétez si nécessaire avant de générer.
+              </p>
+            )}
+          </div>
+
+          <div className="flex items-center gap-3">
+            <div className="flex-1 h-px bg-gray-200" />
+            <span className="text-xs text-gray-400">ou saisissez directement</span>
+            <div className="flex-1 h-px bg-gray-200" />
+          </div>
+
           <div>
             <label className="label">Consigne / activité originale</label>
             <textarea
