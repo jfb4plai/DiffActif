@@ -29,32 +29,47 @@ export default async function handler(req, res) {
   }
 
   try {
-    // ── Étape 1 : OCR Vision ──────────────────────────────────────────
+    // ── Étape 1 : OCR Vision avec contexte (Sonnet pour qualité maximale) ──
+    const SYSTEM_OCR = `Tu es un OCR expert pour documents scolaires francophones (FWB — Fédération Wallonie-Bruxelles).
+
+ÉTAPE 1 — IDENTIFICATION DU CONTEXTE (obligatoire avant transcription) :
+- Détermine la matière (français, maths, éveil, etc.) et le niveau (maternelle, primaire cycle 1/2/3, secondaire)
+- Identifie le type d'exercice dominant (phonologie, conjugaison, vocabulaire, calcul…)
+- Repère le champ lexical attendu selon le titre et les éléments visibles
+
+ÉTAPE 2 — TRANSCRIPTION FIDÈLE :
+- Extrais TOUT le texte dans l'ordre naturel de lecture
+- Respecte la structure : numérotation, sauts de ligne, paragraphes, tirets
+- Les espaces vides / lignes pointillées / blancs à compléter par l'élève → transcris-les comme "______" (ne pas les marquer comme douteux)
+- Pour tout passage TEXTE réellement illisible ou ambigu : [?mot douteux?]
+  Ex : [?chien / chier?] si deux lectures sont possibles — jamais sur des blancs d'exercice
+
+ÉTAPE 3 — CONTRÔLE DE COHÉRENCE :
+- Vérifie que chaque mot est cohérent avec le contexte identifié
+- En cas d'ambiguïté OCR, préfère le mot du champ lexical probable plutôt qu'une transcription littérale improbable
+- EXERCICES DE PHONOLOGIE : les sons listés dans le titre DOIVENT former une famille phonologique cohérente
+  Familles valides : "eu / oeu / eur / oeur", "an / en / am / em", "in / ain / ein", "ill / ail / eil / euil", "ou / on", "oi / oin"…
+  En cursive/manuscrit : le "e" ressemble visuellement à un "o" → vérifier la cohérence AVANT de valider
+  Si la série lue est incohérente, corrige le son qui rompt la famille phonologique
+
+Retourne uniquement le texte extrait avec les marqueurs [? ?] sur les seuls passages textuels incertains.
+Ne commente pas.`
+
     const ocrContent = [
       ...images.map(img => ({
         type: 'image',
         source: { type: 'base64', media_type: 'image/jpeg', data: img },
       })),
-      {
-        type: 'text',
-        text: `Tu es un OCR expert pour documents scolaires francophones (FWB — Fédération Wallonie-Bruxelles).
-
-Extrais tout le texte visible dans ces pages dans l'ordre naturel de lecture.
-
-RÈGLES IMPÉRATIVES :
-- Respecte la structure exacte : numérotation, sauts de ligne, paragraphes, tirets
-- Pour tout passage illisible, dégradé ou ambigu : entoure-le de [? ... ?]
-  Ex : [?mot illisible?] ou [?chien / chier?] si deux lectures sont possibles
-- Ne commente pas — retourne uniquement le texte avec les marqueurs [? ?]`,
-      },
+      { type: 'text', text: 'Extrais le texte de ce document scolaire en appliquant les 3 étapes du système.' },
     ]
 
     const ocrResp = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: HEADERS,
       body: JSON.stringify({
-        model: 'claude-haiku-4-5-20251001',
+        model: 'claude-sonnet-4-6',
         max_tokens: 4096,
+        system: SYSTEM_OCR,
         messages: [{ role: 'user', content: ocrContent }],
       }),
     })
@@ -65,25 +80,25 @@ RÈGLES IMPÉRATIVES :
     const ocrData = await ocrResp.json()
     const textOcr = ocrData.content[0].text.trim()
 
-    // ── Étape 2 : Vérification cohérence ─────────────────────────────
+    // ── Étape 2 : Vérification cohérence (Haiku suffit pour ce pass) ──
     const verifResp = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: HEADERS,
       body: JSON.stringify({
         model: 'claude-haiku-4-5-20251001',
         max_tokens: 4096,
-        system: `Tu vérifies la cohérence d'un texte extrait par OCR depuis un document scolaire francophone (FWB).
-Détecte les mots qui semblent incorrects au regard du sens pédagogique, de la syntaxe française et du contexte scolaire.
-Conserve les marqueurs [? ?] déjà présents. Ajoute [? ... ?] sur tout passage non marqué mais manifestement suspect.
-Ne modifie rien d'autre — retourne le texte tel quel avec les marqueurs.`,
+        system: `Tu vérifies la cohérence pédagogique d'un texte OCR issu d'un document scolaire FWB.
+Conserve les marqueurs [? ?] déjà présents.
+Ajoute [? mot suspect ?] uniquement sur des mots textuels manifestement incohérents avec le sens du document.
+NE JAMAIS marquer les blancs "______" comme douteux — ce sont des espaces-réponse normaux.
+Ne modifie rien d'autre. Retourne le texte avec les seuls marqueurs justifiés.`,
         messages: [{
           role: 'user',
-          content: `Voici le texte OCR extrait. Vérifie la cohérence et retourne-le avec les marqueurs [? ?] sur les passages douteux :\n\n${textOcr}`,
+          content: `Voici le texte OCR. Vérifie la cohérence et retourne-le avec les marqueurs [? ?] sur les passages douteux :\n\n${textOcr}`,
         }],
       }),
     })
     if (!verifResp.ok) {
-      // Si la vérif échoue, on retourne quand même l'OCR brut
       return res.status(200).json({ text: textOcr, hasDoutes: false, nbDoutes: 0 })
     }
     const verifData = await verifResp.json()
