@@ -33,6 +33,15 @@ export default function Module2_Adapter() {
   const [saving, setSaving]         = useState(false)
   const [exporting, setExporting]   = useState(false)
 
+  function fileToBase64(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader()
+      reader.onload = () => resolve(reader.result.split(',')[1])
+      reader.onerror = reject
+      reader.readAsDataURL(file)
+    })
+  }
+
   async function handleFile(file) {
     if (!file) return
     const ext = file.name.split('.').pop().toLowerCase()
@@ -52,8 +61,7 @@ export default function Module2_Adapter() {
     setSaved(false)
 
     try {
-      const arrayBuffer = await file.arrayBuffer()
-      const base64 = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)))
+      const base64 = await fileToBase64(file)
 
       const res = await fetch('/api/extract', {
         method: 'POST',
