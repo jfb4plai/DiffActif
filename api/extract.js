@@ -22,9 +22,9 @@ export default async function handler(req, res) {
     let text = ''
 
     if (ext === 'pdf') {
-      const pdfParse = (await import('pdf-parse/lib/pdf-parse.js')).default
-      const result = await pdfParse(buffer)
-      text = result.text
+      const { extractText } = await import('unpdf')
+      const { text: pages } = await extractText(new Uint8Array(buffer), { mergePages: true })
+      text = Array.isArray(pages) ? pages.join('\n\n') : pages
     } else if (ext === 'docx') {
       const mammoth = (await import('mammoth')).default
       const result = await mammoth.extractRawText({ buffer })
