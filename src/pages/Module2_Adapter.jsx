@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabase'
 import { useAuth } from '../contexts/AuthContext'
 import { PROFILS, NIVEAUX, TYPES_ENSEIGNEMENT } from '../lib/constants'
 import { exportAdaptationsDocx } from '../lib/exportDocx'
+import { extractFile } from '../lib/extractFile'
 
 export default function Module2_Adapter() {
   const { user, profile } = useAuth()
@@ -33,15 +34,6 @@ export default function Module2_Adapter() {
   const [saving, setSaving]         = useState(false)
   const [exporting, setExporting]   = useState(false)
 
-  function fileToBase64(file) {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader()
-      reader.onload = () => resolve(reader.result.split(',')[1])
-      reader.onerror = reject
-      reader.readAsDataURL(file)
-    })
-  }
-
   async function handleFile(file) {
     if (!file) return
     const ext = file.name.split('.').pop().toLowerCase()
@@ -49,8 +41,8 @@ export default function Module2_Adapter() {
       setImportError('Format non supporté — utilisez PDF ou DOCX.')
       return
     }
-    if (file.size > 5 * 1024 * 1024) {
-      setImportError('Fichier trop lourd (max 5 Mo).')
+    if (file.size > 10 * 1024 * 1024) {
+      setImportError('Fichier trop lourd (max 10 Mo).')
       return
     }
 
@@ -61,16 +53,8 @@ export default function Module2_Adapter() {
     setSaved(false)
 
     try {
-      const base64 = await fileToBase64(file)
-
-      const res = await fetch('/api/extract', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ fileContent: base64, fileName: file.name }),
-      })
-      const data = await res.json()
-      if (!res.ok) throw new Error(data.error ?? 'Erreur extraction')
-      setActivite(data.text)
+      const text = await extractFile(file)
+      setActivite(text)
     } catch (err) {
       setImportError(err.message)
       setImportedFile('')
