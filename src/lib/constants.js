@@ -135,6 +135,10 @@ export const REFERENCES_RISS = [
     riss_id: 'W4414205903',
     doi: '10.51363/unifr.lth.2025.045',
     concept: 'CUA / UDL',
+    utilisation: [
+      { module: 'Module 3 — Séquence', detail: 'Structure des séquences différenciées selon les 3 principes CUA' },
+      { module: 'Tableau de bord', detail: 'Rappel des 3 principes CUA affiché à chaque connexion' },
+    ],
   },
   {
     id: 'alvarez_2024',
@@ -144,6 +148,10 @@ export const REFERENCES_RISS = [
     riss_id: 'W4402615917',
     doi: '10.57161/r2024-03-01',
     concept: 'CUA / UDL',
+    utilisation: [
+      { module: 'Module 2 — Adapter', detail: 'Les 3 axes (représentation, action/expression, engagement) guident la génération IA' },
+      { module: 'Module 4 — Bibliothèque', detail: 'Filtre par principe CUA sur les exemples' },
+    ],
   },
   {
     id: 'fournier_2024',
@@ -152,6 +160,11 @@ export const REFERENCES_RISS = [
     titre: 'Les adaptations pédagogiques de l\'enseignant pour les élèves ayant des troubles « dys »',
     riss_id: 'dumas-04562654',
     concept: 'DYS — adaptations',
+    utilisation: [
+      { module: 'Module 1 — Profils', detail: 'Stratégies-clés affichées pour chaque profil DYS' },
+      { module: 'Module 2 — Adapter', detail: 'Ancrage scientifique des variantes générées pour les profils dyslexie/dyspraxie/dyscalculie' },
+      { module: 'Module 4 — Bibliothèque', detail: 'Source des exemples d\'adaptations DYS' },
+    ],
   },
   {
     id: 'blot_2024',
@@ -160,6 +173,10 @@ export const REFERENCES_RISS = [
     titre: 'Pratiques enseignantes dans le secondaire : analyse de la différenciation en cours de langues',
     riss_id: 'dumas-04638390',
     concept: 'Différenciation — secondaire',
+    utilisation: [
+      { module: 'Module 5 — Progression', detail: 'Indicateurs de la dimension "Adaptation du contenu" de la grille d\'auto-évaluation' },
+      { module: 'Module 4 — Bibliothèque', detail: 'Source de l\'exemple "Minuteur et tâches fragmentées" (TDAH)' },
+    ],
   },
   {
     id: 'goetchel_2025',
@@ -168,6 +185,10 @@ export const REFERENCES_RISS = [
     titre: 'Diversité des profils, unité dans l\'apprentissage : la différenciation pédagogique',
     riss_id: 'dumas-05353601',
     concept: 'Différenciation — profils',
+    utilisation: [
+      { module: 'Module 5 — Progression', detail: 'Grille d\'auto-évaluation de la pratique différenciée (5 dimensions)' },
+      { module: 'Module 4 — Bibliothèque', detail: 'Source des exemples "Consigne à niveaux" et "Enrichissement HPI"' },
+    ],
   },
   {
     id: 'mahi_haddad_2025',
@@ -176,6 +197,10 @@ export const REFERENCES_RISS = [
     titre: 'L\'IA au service de la différenciation pédagogique dans l\'enseignement des mathématiques',
     riss_id: 'dumas-05106961',
     concept: 'IA + différenciation',
+    utilisation: [
+      { module: 'Module 2 — Adapter', detail: 'Justification du modèle 80% IA / 20% enseignant et de l\'anonymat des codes élèves' },
+      { module: 'Module 4 — Bibliothèque', detail: 'Source de l\'exemple "Tâche ancrée dans le vécu" (décrocheur)' },
+    ],
   },
   {
     id: 'huau_2017',
@@ -185,6 +210,10 @@ export const REFERENCES_RISS = [
     riss_id: 'hal-01792683',
     doi: '10.3917/nras.077.0169',
     concept: 'Dyslexie — scolarisation',
+    utilisation: [
+      { module: 'Module 1 — Profils', detail: 'Caractéristiques du profil Dyslexie/Dysorthographie et stratégies-clés associées' },
+      { module: 'Module 4 — Bibliothèque', detail: 'Source de l\'exemple "Grille de calcul et calculatrice" (dyscalculie)' },
+    ],
   },
   {
     id: 'rousseau_2017',
@@ -194,5 +223,9 @@ export const REFERENCES_RISS = [
     riss_id: 'W2949858187',
     doi: '10.24452/sjer.39.1.4997',
     concept: 'Inclusion — métasynthèse',
+    utilisation: [
+      { module: 'Module 4 — Bibliothèque', detail: 'Source de l\'exemple "Production orale ou visuelle" (dyspraxie)' },
+      { module: 'Module 5 — Progression', detail: 'Indicateurs de la dimension "Pratiques inclusives / collaboration"' },
+    ],
   },
 ]

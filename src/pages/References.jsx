@@ -61,10 +61,10 @@ export default function References() {
         <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">
           Validées dans le corpus RISS
         </h2>
-        <div className="space-y-2">
+        <div className="space-y-3">
           {REFERENCES_RISS.map(ref => (
             <div key={ref.id} className="card py-4">
-              <div className="flex items-start justify-between gap-4">
+              <div className="flex items-start justify-between gap-4 mb-3">
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-1 flex-wrap">
                     <span className="badge bg-brand-100 text-brand-700">RISS ✓</span>
@@ -83,6 +83,25 @@ export default function References() {
                   </div>
                 </div>
               </div>
+
+              {/* Utilisation dans DiffActif */}
+              {ref.utilisation && ref.utilisation.length > 0 && (
+                <div className="border-t border-gray-100 pt-3">
+                  <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
+                    Utilisé dans DiffActif
+                  </p>
+                  <div className="space-y-1.5">
+                    {ref.utilisation.map((u, i) => (
+                      <div key={i} className="flex items-start gap-2">
+                        <span className="badge bg-brand-50 text-brand-700 flex-shrink-0 mt-0.5">
+                          {u.module}
+                        </span>
+                        <span className="text-xs text-gray-600">{u.detail}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           ))}
         </div>
