@@ -36,7 +36,7 @@ export default async function handler(req, res) {
       },
       body: JSON.stringify({
         model: 'claude-haiku-4-5-20251001',
-        max_tokens: 1200,
+        max_tokens: action === 'appliquer_au' ? 2500 : 1200,
         system: systemPrompt,
         messages: [{ role: 'user', content: userMessage }],
       }),
@@ -159,6 +159,29 @@ Tu reformules une adaptation existante pour la rendre plus concrète et praticab
 ${antiClaudisation(niveauLabel, typeLabel)}`
   }
 
+  if (action === 'appliquer_au') {
+    return `${base}
+
+Tu appliques les Aménagements Universels (AU) à un document scolaire.
+Les AU améliorent l'accessibilité pour TOUS les élèves sans stigmatiser personne.
+
+AMÉNAGEMENTS UNIVERSELS À APPLIQUER :
+1. Consignes courtes — max 15 mots par phrase, une idée par phrase
+2. Verbe d'action en début de consigne, entre ** : **Lis**, **Complète**, **Entoure**
+3. Numéroter chaque exercice de façon continue (1, 2, 3…)
+4. Structurer avec des titres clairs si le document en a
+5. Remplacer les mots rares par leur équivalent courant si possible
+6. Conserver TOUT le contenu original : exercices, listes de mots, phrases, choix
+
+RÈGLES :
+- Retourne le document reformaté, rien d'autre
+- Conserve la structure complète (aucun contenu supprimé)
+- N'ajoute pas de commentaire, d'introduction ni de conclusion
+- Les blancs à compléter restent des blancs : ______
+
+${antiClaudisation(niveauLabel, typeLabel)}`
+  }
+
   return `${base}\n${antiClaudisation(niveauLabel, typeLabel)}`
 }
 
@@ -210,6 +233,15 @@ Profil ciblé : ${context.profil ?? 'Non précisé'}
 Ce qui pose problème : ${context.raison ?? 'Trop vague ou peu praticable'}
 
 Donne directement la version améliorée.`
+  }
+
+  if (action === 'appliquer_au') {
+    return `Document scolaire original :
+"""
+${context.activite ?? 'Non fourni'}
+"""
+
+Applique les Aménagements Universels et retourne le document reformaté.`
   }
 
   return context.prompt ?? ''

@@ -6,6 +6,7 @@ import Login        from './pages/Login'
 import Onboarding   from './pages/Onboarding'
 import ResetPassword from './pages/ResetPassword'
 import Dashboard    from './pages/Dashboard'
+import Lire         from './pages/Lire'
 
 import Module1_Profils     from './pages/Module1_Profils'
 import Module2_Adapter     from './pages/Module2_Adapter'
@@ -35,6 +36,7 @@ function AppRoutes() {
       <Routes>
         <Route path="/login"          element={<Login />} />
         <Route path="/reset-password" element={<ResetPassword />} />
+        <Route path="/lire"           element={<Lire />} />
         <Route path="*"               element={<Navigate to="/login" replace />} />
       </Routes>
     )
@@ -61,6 +63,7 @@ function AppRoutes() {
         <Route path="/bibliotheque" element={<Module4_Bibliotheque />} />
         <Route path="/progression"  element={<Module5_Progression />} />
         <Route path="/references"   element={<References />} />
+        <Route path="/lire"         element={<Lire />} />
         <Route path="*"             element={<Navigate to="/dashboard" replace />} />
       </Routes>
     </Layout>

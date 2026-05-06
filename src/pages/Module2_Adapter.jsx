@@ -2,8 +2,9 @@ import { useState, useRef } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../contexts/AuthContext'
 import { PROFILS, NIVEAUX, TYPES_ENSEIGNEMENT } from '../lib/constants'
-import { exportAdaptationsDocx } from '../lib/exportDocx'
+import { exportAdaptationsDocx, exportUniverselDocx, exportProfilDocx } from '../lib/exportDocx'
 import { extractFile } from '../lib/extractFile'
+import { fetchPictosForText } from '../lib/arasaac'
 
 export default function Module2_Adapter() {
   const { user, profile } = useAuth()
@@ -25,16 +26,26 @@ export default function Module2_Adapter() {
   const [hasDoutes, setHasDoutes] = useState(false)
   const [nbDoutes, setNbDoutes]   = useState(0)
 
-  // Génération IA
+  // Document AU universel
+  const [generatingAu, setGeneratingAu] = useState(false)
+  const [auTexte, setAuTexte]           = useState('')
+
+  // Génération IA adaptations par profil
   const [generating, setGenerating] = useState(false)
   const [resultat, setResultat]     = useState('')
+  const [profilSections, setProfilSections] = useState({}) // { dyslexie: "...", tdah: "..." }
   const [error, setError]           = useState('')
 
   // Personnalisation enseignant (20%)
   const [texteFinal, setTexteFinal] = useState('')
   const [saved, setSaved]           = useState(false)
   const [saving, setSaving]         = useState(false)
+
+  // Export
   const [exporting, setExporting]   = useState(false)
+  const [exportingProfil, setExportingProfil] = useState('') // profil en cours d'export
+
+  // ── Import fichier ───────────────────────────────────────────
 
   async function handleFile(file) {
     if (!file) return
@@ -55,6 +66,8 @@ export default function Module2_Adapter() {
     setSaved(false)
     setHasDoutes(false)
     setNbDoutes(0)
+    setAuTexte('')
+    setProfilSections({})
 
     try {
       const { text, hasDoutes: hd, nbDoutes: nb } = await extractFile(file)
@@ -68,16 +81,8 @@ export default function Module2_Adapter() {
     setImporting(false)
   }
 
-  function onFileInput(e) {
-    handleFile(e.target.files[0])
-    e.target.value = ''
-  }
-
-  function onDrop(e) {
-    e.preventDefault()
-    setDragOver(false)
-    handleFile(e.dataTransfer.files[0])
-  }
+  function onFileInput(e) { handleFile(e.target.files[0]); e.target.value = '' }
+  function onDrop(e) { e.preventDefault(); setDragOver(false); handleFile(e.dataTransfer.files[0]) }
 
   function toggleProfil(val) {
     setProfilsChoisis(prev =>
@@ -86,6 +91,50 @@ export default function Module2_Adapter() {
     setResultat('')
     setSaved(false)
     setTexteFinal('')
+    setProfilSections({})
+  }
+
+  // ── Document AU universel ────────────────────────────────────
+
+  async function genererAU() {
+    if (!activite.trim()) return
+    setGeneratingAu(true)
+    try {
+      const res = await fetch('/api/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'appliquer_au',
+          context: { activite, matiere, niveau, type_enseignement: typeEns },
+        }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error ?? 'Erreur serveur')
+      setAuTexte(data.text)
+    } catch (err) {
+      setError(err.message)
+    }
+    setGeneratingAu(false)
+  }
+
+  // ── Adaptations par profil ───────────────────────────────────
+
+  function parseProfileSections(text, profiles) {
+    const sections = {}
+    const upperProfiles = profiles.map(p => p.toUpperCase())
+    // Délimiteurs possibles après le nom de profil : ], —, -, :, espace
+    const delimiter = `(?:${upperProfiles.join('|')})`
+    for (const profil of profiles) {
+      const upper = profil.toUpperCase()
+      // Capture tout jusqu'au prochain profil ou fin
+      const regex = new RegExp(
+        `\\[?\\*?${upper}\\*?(?:\\s*/[A-ZÀÂÉÈÊËÎÏÔÙÛÜ\\s]+)?\\*?\\]?[\\s—\\-:]+([\\s\\S]*?)(?=\\[?\\*?(?:${upperProfiles.join('|')})\\*?[\\]—\\-: ]|$)`,
+        'i'
+      )
+      const match = text.match(regex)
+      if (match?.[1]?.trim()) sections[profil] = match[1].trim()
+    }
+    return sections
   }
 
   async function generer() {
@@ -95,6 +144,7 @@ export default function Module2_Adapter() {
     setResultat('')
     setSaved(false)
     setTexteFinal('')
+    setProfilSections({})
 
     try {
       const res = await fetch('/api/generate', {
@@ -102,38 +152,48 @@ export default function Module2_Adapter() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           action: 'adapter_activite',
-          context: {
-            activite,
-            objectif,
-            profils: profilsChoisis,
-            niveau,
-            type_enseignement: typeEns,
-            matiere,
-          },
+          context: { activite, objectif, profils: profilsChoisis, niveau, type_enseignement: typeEns, matiere },
         }),
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error ?? 'Erreur serveur')
       setResultat(data.text)
       setTexteFinal(data.text)
+      setProfilSections(parseProfileSections(data.text, profilsChoisis))
     } catch (err) {
       setError(err.message)
     }
     setGenerating(false)
   }
 
+  // ── Exports ──────────────────────────────────────────────────
+
   async function exporterDocx() {
     setExporting(true)
-    await exportAdaptationsDocx({
-      activiteOriginale: activite,
-      objectif,
-      texteFinal,
-      profils: profilsChoisis,
-      matiere,
-      niveau,
-      typeEnseignement: typeEns,
-    })
+    await exportAdaptationsDocx({ activiteOriginale: activite, objectif, texteFinal, profils: profilsChoisis, matiere, niveau, typeEnseignement: typeEns })
     setExporting(false)
+  }
+
+  async function exporterAuDocx() {
+    if (!auTexte) return
+    setExporting(true)
+    await exportUniverselDocx({ auTexte, matiere, niveau, typeEnseignement: typeEns })
+    setExporting(false)
+  }
+
+  async function exporterProfilDocx(profil) {
+    const arTexte = profilSections[profil] || texteFinal
+    setExportingProfil(profil)
+
+    // Pictos Arasaac uniquement pour les profils concernés
+    const PROFILS_PICTOS = ['allophone']
+    let pictos = []
+    if (PROFILS_PICTOS.includes(profil) && activite) {
+      try { pictos = await fetchPictosForText(activite, 5) } catch { /* optionnel */ }
+    }
+
+    await exportProfilDocx({ profil, arTexte, auTexte: auTexte || activite, pictos, matiere, niveau, typeEnseignement: typeEns })
+    setExportingProfil('')
   }
 
   async function sauvegarder() {
@@ -209,25 +269,17 @@ export default function Module2_Adapter() {
                   : 'border-gray-300 hover:border-brand-400 hover:bg-gray-50'
               }`}
             >
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept=".pdf,.docx"
-                className="hidden"
-                onChange={onFileInput}
-              />
+              <input ref={fileInputRef} type="file" accept=".pdf,.docx" className="hidden" onChange={onFileInput} />
               {importing ? (
-                <p className="text-sm text-brand-600 font-medium">Extraction en cours...</p>
+                <p className="text-sm text-brand-600 font-medium">Extraction et analyse en cours...</p>
               ) : importedFile ? (
                 <div className="flex items-center justify-center gap-2">
                   <span className="text-green-600 text-lg">✓</span>
                   <span className="text-sm text-green-700 font-medium">{importedFile}</span>
                   <button
-                    onClick={e => { e.stopPropagation(); setImportedFile(''); setActivite('') }}
+                    onClick={e => { e.stopPropagation(); setImportedFile(''); setActivite(''); setAuTexte(''); setProfilSections({}) }}
                     className="text-xs text-gray-400 hover:text-red-500 ml-2"
-                  >
-                    ✕
-                  </button>
+                  >✕</button>
                 </div>
               ) : (
                 <>
@@ -235,25 +287,20 @@ export default function Module2_Adapter() {
                   <p className="text-sm text-gray-600 font-medium">
                     Glisser-déposer un fichier ou <span className="text-brand-600 underline">parcourir</span>
                   </p>
-                  <p className="text-xs text-gray-400 mt-1">PDF · DOCX — max 5 Mo</p>
+                  <p className="text-xs text-gray-400 mt-1">PDF · DOCX — max 10 Mo</p>
                 </>
               )}
             </div>
-            {importError && (
-              <p className="text-xs text-red-500 mt-1">{importError}</p>
-            )}
+            {importError && <p className="text-xs text-red-500 mt-1">{importError}</p>}
             {importedFile && !importing && !hasDoutes && (
-              <p className="text-xs text-gray-400 mt-1">
-                Texte extrait — vérifiez avant de générer.
-              </p>
+              <p className="text-xs text-gray-400 mt-1">Texte extrait — vérifiez avant de générer.</p>
             )}
             {importedFile && !importing && hasDoutes && (
               <div className="mt-2 flex items-start gap-2 rounded-lg bg-amber-50 border border-amber-200 px-3 py-2">
                 <span className="text-amber-500 text-sm mt-0.5">⚠</span>
                 <p className="text-xs text-amber-800">
-                  <strong>{nbDoutes} passage{nbDoutes > 1 ? 's' : ''} incertain{nbDoutes > 1 ? 's' : ''}</strong> détecté{nbDoutes > 1 ? 's' : ''} — signalés{' '}
-                  <code className="bg-amber-100 px-1 rounded">[? ... ?]</code> dans le texte ci-dessous.
-                  Corrigez-les avant de générer.
+                  <strong>{nbDoutes} passage{nbDoutes > 1 ? 's' : ''} incertain{nbDoutes > 1 ? 's' : ''}</strong> — signalés{' '}
+                  <code className="bg-amber-100 px-1 rounded">[? ... ?]</code> dans le texte. Corrigez avant de générer.
                 </p>
               </div>
             )}
@@ -270,11 +317,12 @@ export default function Module2_Adapter() {
             <textarea
               className="input resize-none h-36"
               value={activite}
-              onChange={e => { setActivite(e.target.value); setResultat(''); setSaved(false) }}
+              onChange={e => { setActivite(e.target.value); setResultat(''); setSaved(false); setAuTexte(''); setProfilSections({}) }}
               placeholder="Collez ici votre activité ou consigne telle qu'elle est destinée à l'ensemble de la classe..."
             />
             <p className="text-xs text-gray-400 mt-1">{activite.length} caractères (min. 20)</p>
           </div>
+
           <div>
             <label className="label">Objectif d'apprentissage (facultatif mais recommandé)</label>
             <input
@@ -286,6 +334,42 @@ export default function Module2_Adapter() {
           </div>
         </div>
       </div>
+
+      {/* Étape 2b — Document AU universel */}
+      {activite.trim().length > 20 && (
+        <div className="card border-brand-100 bg-brand-50">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="font-semibold text-gray-800">Document AU universel</h2>
+              <p className="text-xs text-gray-500 mt-0.5">
+                Applique les Aménagements Universels — version distribuée à toute la classe
+              </p>
+            </div>
+            <button
+              onClick={genererAU}
+              disabled={generatingAu}
+              className="btn-secondary text-sm whitespace-nowrap"
+            >
+              {generatingAu ? 'Génération...' : auTexte ? 'Regénérer AU' : 'Générer document AU'}
+            </button>
+          </div>
+
+          {auTexte && (
+            <div className="mt-4 space-y-3">
+              <div className="bg-white rounded-xl p-4 text-sm text-gray-700 whitespace-pre-wrap leading-relaxed border border-brand-100 max-h-48 overflow-y-auto">
+                {auTexte}
+              </div>
+              <button
+                onClick={exporterAuDocx}
+                disabled={exporting}
+                className="btn-primary text-sm"
+              >
+                {exporting ? 'Export...' : '⬇ Exporter document AU universel (.docx)'}
+              </button>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Étape 3 — Profils */}
       <div className="card">
@@ -312,7 +396,7 @@ export default function Module2_Adapter() {
         </div>
       </div>
 
-      {/* Bouton générer */}
+      {/* Bouton générer adaptations */}
       <button
         onClick={generer}
         disabled={!canGenerate || generating}
@@ -363,13 +447,13 @@ export default function Module2_Adapter() {
             <p className="text-xs text-gray-400">
               Fondé sur : Mahi Haddad & Beaud (2025) · Fournier (2024) — corpus RISS
             </p>
-            <div className="flex gap-2">
+            <div className="flex gap-2 flex-wrap justify-end">
               <button
                 onClick={exporterDocx}
                 disabled={exporting || !texteFinal.trim()}
                 className="btn-secondary text-sm"
               >
-                {exporting ? 'Export...' : '⬇ DOCX'}
+                {exporting ? 'Export...' : '⬇ DOCX (toutes adaptations)'}
               </button>
               <button
                 onClick={sauvegarder}
@@ -380,6 +464,41 @@ export default function Module2_Adapter() {
               </button>
             </div>
           </div>
+
+          {/* Export par profil */}
+          {profilsChoisis.length > 0 && (
+            <div className="mt-4 pt-4 border-t border-gray-100">
+              <p className="text-xs font-semibold text-gray-700 mb-2">
+                Documents par profil (AU + AR spécifiques)
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {profilsChoisis.map(profil => {
+                  const def = PROFILS.find(p => p.value === profil)
+                  const hasAudio = ['dyslexie', 'allophone', 'decrocheur'].includes(profil)
+                  const hasPictos = profil === 'allophone'
+                  return (
+                    <button
+                      key={profil}
+                      onClick={() => exporterProfilDocx(profil)}
+                      disabled={!!exportingProfil || !texteFinal.trim()}
+                      className="btn-secondary text-xs flex items-center gap-1"
+                    >
+                      {exportingProfil === profil ? 'Export...' : (
+                        <>
+                          {def?.icon} {def?.label.split('/')[0].trim()}
+                          {hasAudio && ' 🔊'}
+                          {hasPictos && ' 🖼'}
+                        </>
+                      )}
+                    </button>
+                  )
+                })}
+              </div>
+              <p className="text-xs text-gray-400 mt-2">
+                🔊 = QR code audio · 🖼 = pictogrammes Arasaac
+              </p>
+            </div>
+          )}
         </div>
       )}
     </div>

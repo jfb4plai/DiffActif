@@ -6,10 +6,12 @@
 import {
   Document, Packer, Paragraph, TextRun, HeadingLevel,
   AlignmentType, BorderStyle, Table, TableRow, TableCell,
-  WidthType, ShadingType, Header, PageNumber,
+  WidthType, ShadingType, Header, PageNumber, ImageRun,
 } from 'docx'
 import { saveAs } from 'file-saver'
+import QRCode from 'qrcode'
 import { PROFILS, NIVEAUX, TYPES_ENSEIGNEMENT } from './constants'
+import { ARASAAC_ATTRIBUTION } from './arasaac'
 
 const BRAND_TEAL = '0a9370'
 const GRAY_LIGHT = 'F3F4F6'
@@ -253,6 +255,226 @@ function metaTable(rows) {
       ),
     }),
   ]
+}
+
+// ──────────────────────────────────────────
+// Export document AU universel (Module 2)
+// ──────────────────────────────────────────
+
+export async function exportUniverselDocx({ auTexte, matiere, niveau, typeEnseignement }) {
+  const date    = new Date().toLocaleDateString('fr-BE', { day: 'numeric', month: 'long', year: 'numeric' })
+  const niveauL = NIVEAUX.find(n => n.value === niveau)?.label ?? niveau ?? ''
+  const typeL   = TYPES_ENSEIGNEMENT.find(t => t.value === typeEnseignement)?.label ?? typeEnseignement ?? ''
+
+  const doc = new Document({
+    styles: { default: { document: { run: { font: 'Arial', size: 22 } } } },
+    sections: [{
+      headers: {
+        default: new Header({
+          children: [new Paragraph({
+            children: [
+              new TextRun({ text: 'DiffActif — PLAI', bold: true, color: BRAND_TEAL, size: 18 }),
+              new TextRun({ text: `  |  Document AU universel  |  ${date}`, color: GRAY_TEXT, size: 18 }),
+            ],
+            border: { bottom: { style: BorderStyle.SINGLE, size: 4, color: BRAND_TEAL } },
+          })],
+        }),
+      },
+      children: [
+        new Paragraph({
+          text: matiere ? `${matiere} — Aménagements Universels` : 'Document — Aménagements Universels',
+          heading: HeadingLevel.TITLE,
+          spacing: { after: 200 },
+          run: { color: BRAND_TEAL, bold: true, size: 36 },
+        }),
+
+        ...metaTable([
+          ['Matière',  matiere  || '—'],
+          ['Niveau',   niveauL  || '—'],
+          ['Type',     typeL    || '—'],
+          ['Date',     date],
+          ['Version',  'Aménagements Universels — toute la classe'],
+        ]),
+
+        spacer(),
+
+        sectionTitle('Document avec aménagements universels'),
+        ...parseAuText(auTexte),
+
+        spacer(),
+
+        new Paragraph({
+          children: [new TextRun({
+            text: 'Aménagements Universels (CUA) — Sources RISS : Rusconi (2025) W4414205903 · Alvarez (2024) W4402615917',
+            size: 16, color: GRAY_TEXT, italics: true,
+          })],
+          border: { top: { style: BorderStyle.SINGLE, size: 2, color: 'E5E7EB' } },
+          spacing: { before: 400 },
+        }),
+      ],
+    }],
+  })
+
+  const blob = await Packer.toBlob(doc)
+  saveAs(blob, `DiffActif_AU_universel_${matiere || 'cours'}_${new Date().toISOString().split('T')[0]}.docx`)
+}
+
+// ──────────────────────────────────────────
+// Export document par profil (AU + AR spécifiques)
+// ──────────────────────────────────────────
+
+// Profils qui reçoivent un QR audio
+const PROFILS_AUDIO = ['dyslexie', 'allophone', 'decrocheur']
+// Profils qui reçoivent des pictos Arasaac
+const PROFILS_PICTOS = ['allophone']
+
+export async function exportProfilDocx({
+  profil,         // value du profil (ex: 'dyslexie')
+  arTexte,        // adaptation AR pour ce profil
+  auTexte,        // document AU universel (base)
+  pictos = [],    // [{ keyword, base64 }] — Arasaac
+  matiere, niveau, typeEnseignement,
+}) {
+  const profilDef = PROFILS.find(p => p.value === profil)
+  const profilLabel = profilDef?.label ?? profil
+  const date    = new Date().toLocaleDateString('fr-BE', { day: 'numeric', month: 'long', year: 'numeric' })
+  const niveauL = NIVEAUX.find(n => n.value === niveau)?.label ?? niveau ?? ''
+  const typeL   = TYPES_ENSEIGNEMENT.find(t => t.value === typeEnseignement)?.label ?? typeEnseignement ?? ''
+
+  // QR code → page /lire avec le texte de la consigne
+  const withAudio = PROFILS_AUDIO.includes(profil)
+  const withPictos = PROFILS_PICTOS.includes(profil) && pictos.length > 0
+  let qrImageData = null
+
+  if (withAudio && auTexte) {
+    try {
+      const lireUrl = `${window.location.origin}/lire?t=${btoa(unescape(encodeURIComponent(auTexte.slice(0, 800))))}&titre=${btoa(unescape(encodeURIComponent(matiere || 'Activité')))}`
+      const qrDataUrl = await QRCode.toDataURL(lireUrl, { errorCorrectionLevel: 'M', width: 200, margin: 1 })
+      qrImageData = qrDataUrl.split(',')[1]
+    } catch { /* QR optionnel */ }
+  }
+
+  const children = [
+    new Paragraph({
+      text: `${matiere || 'Activité'} — Version ${profilLabel}`,
+      heading: HeadingLevel.TITLE,
+      spacing: { after: 200 },
+      run: { color: BRAND_TEAL, bold: true, size: 36 },
+    }),
+
+    ...metaTable([
+      ['Matière',  matiere  || '—'],
+      ['Niveau',   niveauL  || '—'],
+      ['Type',     typeL    || '—'],
+      ['Profil',   profilLabel],
+      ['Date',     date],
+      ['Version',  'Aménagements Universels + Aménagements Raisonnables'],
+    ]),
+
+    spacer(),
+
+    // Pictos Arasaac (allophone)
+    ...(withPictos ? [
+      sectionTitle('Vocabulaire illustré'),
+      new Paragraph({
+        children: pictos.flatMap(({ keyword, base64 }) => [
+          new ImageRun({ data: base64, transformation: { width: 70, height: 70 }, type: 'png' }),
+          new TextRun({ text: `  ${keyword}     `, size: 18 }),
+        ]),
+        spacing: { after: 320 },
+      }),
+    ] : []),
+
+    sectionTitle('Document avec aménagements universels'),
+    ...parseAuText(auTexte),
+
+    spacer(),
+
+    sectionTitle('Adaptations spécifiques — ' + profilLabel),
+    ...parseAdaptations(arTexte),
+
+    spacer(),
+
+    // QR code audio (dyslexie, allophone, décrocheur)
+    ...(withAudio && qrImageData ? [
+      sectionTitle('Écouter le document'),
+      new Paragraph({
+        children: [
+          new ImageRun({ data: qrImageData, transformation: { width: 120, height: 120 }, type: 'png' }),
+        ],
+        spacing: { after: 80 },
+      }),
+      new Paragraph({
+        children: [new TextRun({
+          text: 'Scanne ce code avec ton téléphone pour écouter le document lu à voix haute.',
+          size: 18, color: GRAY_TEXT, italics: true,
+        })],
+        spacing: { after: 320 },
+      }),
+    ] : []),
+
+    new Paragraph({
+      children: [new TextRun({
+        text: [
+          'Sources RISS : Fournier (2024) dumas-04562654 · Mahi Haddad & Beaud (2025) dumas-05106961',
+          withPictos ? `  |  ${ARASAAC_ATTRIBUTION}` : '',
+        ].join(''),
+        size: 16, color: GRAY_TEXT, italics: true,
+      })],
+      border: { top: { style: BorderStyle.SINGLE, size: 2, color: 'E5E7EB' } },
+      spacing: { before: 400 },
+    }),
+  ]
+
+  const doc = new Document({
+    styles: { default: { document: { run: { font: 'Arial', size: 22 } } } },
+    sections: [{
+      headers: {
+        default: new Header({
+          children: [new Paragraph({
+            children: [
+              new TextRun({ text: 'DiffActif — PLAI', bold: true, color: BRAND_TEAL, size: 18 }),
+              new TextRun({ text: `  |  Version ${profilLabel}  |  ${date}`, color: GRAY_TEXT, size: 18 }),
+            ],
+            border: { bottom: { style: BorderStyle.SINGLE, size: 4, color: BRAND_TEAL } },
+          })],
+        }),
+      },
+      children,
+    }],
+  })
+
+  const blob = await Packer.toBlob(doc)
+  const slug = profil.replace(/[^a-z]/g, '')
+  saveAs(blob, `DiffActif_${slug}_${matiere || 'cours'}_${new Date().toISOString().split('T')[0]}.docx`)
+}
+
+// Parse le texte AU (applique bold sur **verbe**)
+function parseAuText(text) {
+  if (!text) return [new Paragraph({ text: '—' })]
+  return text.split('\n').map(line => {
+    const trimmed = line.trim()
+    if (!trimmed) return spacer()
+    // Détecte les titres de niveau (ex: "# Exercice 1" ou "Exercice 1 —")
+    const isTitle = /^#{1,3}\s/.test(trimmed) || /^(Exercice|Séance|Étape)\s+\d+/i.test(trimmed)
+    if (isTitle) {
+      return new Paragraph({
+        children: [new TextRun({ text: trimmed.replace(/^#+\s*/, ''), bold: true, size: 24, color: BRAND_TEAL })],
+        spacing: { before: 240, after: 80 },
+      })
+    }
+    // Remplace **mot** par TextRun bold
+    const parts = trimmed.split(/(\*\*[^*]+\*\*)/)
+    return new Paragraph({
+      children: parts.map(part => {
+        if (part.startsWith('**') && part.endsWith('**')) {
+          return new TextRun({ text: part.slice(2, -2), bold: true, size: 22 })
+        }
+        return new TextRun({ text: part, size: 22 })
+      }),
+      spacing: { after: 120 },
+    })
+  })
 }
 
 // Parse le texte des adaptations (séparé par profil via "[PROFIL] —")
