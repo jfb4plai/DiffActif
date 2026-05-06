@@ -2,6 +2,7 @@ import { useState, useRef } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../contexts/AuthContext'
 import { PROFILS, NIVEAUX, TYPES_ENSEIGNEMENT } from '../lib/constants'
+import { exportAdaptationsDocx } from '../lib/exportDocx'
 
 export default function Module2_Adapter() {
   const { user, profile } = useAuth()
@@ -30,6 +31,7 @@ export default function Module2_Adapter() {
   const [texteFinal, setTexteFinal] = useState('')
   const [saved, setSaved]           = useState(false)
   const [saving, setSaving]         = useState(false)
+  const [exporting, setExporting]   = useState(false)
 
   async function handleFile(file) {
     if (!file) return
@@ -120,6 +122,20 @@ export default function Module2_Adapter() {
       setError(err.message)
     }
     setGenerating(false)
+  }
+
+  async function exporterDocx() {
+    setExporting(true)
+    await exportAdaptationsDocx({
+      activiteOriginale: activite,
+      objectif,
+      texteFinal,
+      profils: profilsChoisis,
+      matiere,
+      niveau,
+      typeEnseignement: typeEns,
+    })
+    setExporting(false)
   }
 
   async function sauvegarder() {
@@ -339,13 +355,22 @@ export default function Module2_Adapter() {
             <p className="text-xs text-gray-400">
               Fondé sur : Mahi Haddad & Beaud (2025) · Fournier (2024) — corpus RISS
             </p>
-            <button
-              onClick={sauvegarder}
-              disabled={saving || saved || !texteFinal.trim()}
-              className={saved ? 'btn-secondary text-sm' : 'btn-primary text-sm'}
-            >
-              {saved ? 'Sauvegardé ✓' : saving ? 'Enregistrement...' : 'Sauvegarder'}
-            </button>
+            <div className="flex gap-2">
+              <button
+                onClick={exporterDocx}
+                disabled={exporting || !texteFinal.trim()}
+                className="btn-secondary text-sm"
+              >
+                {exporting ? 'Export...' : '⬇ DOCX'}
+              </button>
+              <button
+                onClick={sauvegarder}
+                disabled={saving || saved || !texteFinal.trim()}
+                className={saved ? 'btn-secondary text-sm' : 'btn-primary text-sm'}
+              >
+                {saved ? 'Sauvegardé ✓' : saving ? 'Enregistrement...' : 'Sauvegarder'}
+              </button>
+            </div>
           </div>
         </div>
       )}

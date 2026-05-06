@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../contexts/AuthContext'
 import { PROFILS, NIVEAUX, TYPES_ENSEIGNEMENT, PRINCIPES_CUA } from '../lib/constants'
+import { exportSequenceDocx } from '../lib/exportDocx'
 
 export default function Module3_Sequence() {
   const { user, profile } = useAuth()
@@ -21,6 +22,7 @@ export default function Module3_Sequence() {
   const [error, setError]           = useState('')
   const [saved, setSaved]           = useState(false)
   const [saving, setSaving]         = useState(false)
+  const [exporting, setExporting]   = useState(false)
 
   function update(field, value) {
     setForm(prev => ({ ...prev, [field]: value }))
@@ -64,6 +66,21 @@ export default function Module3_Sequence() {
       setError(err.message)
     }
     setGenerating(false)
+  }
+
+  async function exporterDocx() {
+    setExporting(true)
+    await exportSequenceDocx({
+      titre:             form.titre,
+      matiere:           form.matiere,
+      niveau:            form.niveau,
+      typeEnseignement:  form.type_enseignement,
+      objectif:          form.objectif,
+      nbSeances:         form.nb_seances,
+      profils:           form.profils,
+      texteFinal,
+    })
+    setExporting(false)
   }
 
   async function sauvegarder() {
@@ -214,13 +231,22 @@ export default function Module3_Sequence() {
             <p className="text-xs text-gray-400">
               Fondé sur : Rusconi (2025) · Alvarez (2024) — corpus RISS W4414205903, W4402615917
             </p>
-            <button
-              onClick={sauvegarder}
-              disabled={saving || saved || !texteFinal.trim()}
-              className={saved ? 'btn-secondary text-sm' : 'btn-primary text-sm'}
-            >
-              {saved ? 'Sauvegardé ✓' : saving ? 'Enregistrement...' : 'Sauvegarder'}
-            </button>
+            <div className="flex gap-2">
+              <button
+                onClick={exporterDocx}
+                disabled={exporting || !texteFinal.trim()}
+                className="btn-secondary text-sm"
+              >
+                {exporting ? 'Export...' : '⬇ DOCX'}
+              </button>
+              <button
+                onClick={sauvegarder}
+                disabled={saving || saved || !texteFinal.trim()}
+                className={saved ? 'btn-secondary text-sm' : 'btn-primary text-sm'}
+              >
+                {saved ? 'Sauvegardé ✓' : saving ? 'Enregistrement...' : 'Sauvegarder'}
+              </button>
+            </div>
           </div>
         </div>
       )}
