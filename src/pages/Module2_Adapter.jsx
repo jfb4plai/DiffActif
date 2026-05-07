@@ -279,7 +279,7 @@ export default function Module2_Adapter() {
       try { pictos = await fetchPictosForText(activite, 5) } catch { /* optionnel */ }
     }
 
-    await exportProfilDocx({ profil, arTexte, auTexte: auTexte || activite, pictos, matiere, niveau, typeEnseignement: typeEns })
+    await exportProfilDocx({ profil, arTexte, auTexte: auTexte || activite, pictos, matiere, niveau, typeEnseignement: typeEns, withVerbPictos })
     setExportingProfil('')
   }
 

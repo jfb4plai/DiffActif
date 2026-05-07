@@ -371,6 +371,7 @@ export async function exportProfilDocx({
   auTexte,        // document AU universel (base)
   pictos = [],    // [{ keyword, base64 }] — Arasaac
   matiere, niveau, typeEnseignement,
+  withVerbPictos = false,
 }) {
   const profilDef = PROFILS.find(p => p.value === profil)
   const profilLabel = profilDef?.label ?? profil
@@ -381,14 +382,16 @@ export async function exportProfilDocx({
   const withAudio = PROFILS_AUDIO.includes(profil)
   const withPictos = PROFILS_PICTOS.includes(profil) && pictos.length > 0
 
-  // Pré-chargement pictos AU + QR par consigne (audio profiles)
-  const [pictoMap, consigneQrMap] = await Promise.all([
+  // Pré-chargement pictos AU + verbes + QR par consigne (audio profiles)
+  const [pictoMap, verbPictoMap, consigneQrMap] = await Promise.all([
     fetchPictoMap(auTexte),
+    withVerbPictos ? fetchVerbPictoMap(auTexte) : Promise.resolve({}),
     withAudio && auTexte ? generateConsigneQrMap(auTexte) : Promise.resolve({}),
   ])
+  const mergedPictoMap = { ...pictoMap, ...verbPictoMap }
 
-  const auParagraphs = parseAuText(auTexte, pictoMap, false, consigneQrMap)
-  const hasPictos = withPictos || Object.keys(pictoMap).length > 0
+  const auParagraphs = parseAuText(auTexte, mergedPictoMap, withVerbPictos, consigneQrMap)
+  const hasPictos = withPictos || Object.keys(mergedPictoMap).length > 0
 
   const children = [
     new Paragraph({
@@ -523,6 +526,7 @@ function buildPictoAnswerTable(mots, answerItems, pictoMap) {
     rows: [
       // Ligne 1 : pictogrammes
       new TableRow({
+        cantSplit: true,
         children: mots.map(mot => new TableCell({
           borders: noBorders(),
           children: [new Paragraph({
@@ -539,6 +543,7 @@ function buildPictoAnswerTable(mots, answerItems, pictoMap) {
       }),
       // Ligne 2 : zones de réponse correspondantes
       new TableRow({
+        cantSplit: true,
         children: Array.from({ length: n }, (_, idx) => new TableCell({
           borders: noBorders(),
           children: [new Paragraph({
@@ -559,7 +564,7 @@ async function generateConsigneQrMap(text) {
     .filter(l => /^(Exercice|Séance|Étape)\s+\d+/i.test(l))
   const map = {}
   await Promise.all(exerciceLines.map(async line => {
-    const key = line.replace(/\*\*/g, '')
+    const key = line.replace(/\*\*/g, '').replace(/\u2014/g, ' - ')
     try {
       const url = `${window.location.origin}/lire?t=${btoa(unescape(encodeURIComponent(key)))}&titre=${btoa(unescape(encodeURIComponent('Consigne')))}`
       const qrDataUrl = await QRCode.toDataURL(url, { errorCorrectionLevel: 'L', scale: 5, margin: 1 })
@@ -678,6 +683,8 @@ function parseAuText(text, pictoMap = {}, withVerbPictos = false, consigneQrMap 
       // Tableau uniquement si N pictos = N zones réponse (correspondance exacte) et suivant non-titre
       if (pictoMots.length > 0 && answerItems.length === pictoMots.length && !nextIsTitle) {
         i = nextIdx  // consomme la ligne de réponse
+        // Bridge paragraph : keepNext ne chaîne pas avec Table en OOXML — ce paragraphe force le collage
+        paragraphs.push(new Paragraph({ text: '', spacing: { before: 0, after: 0 }, keepNext: true }))
         paragraphs.push(buildPictoAnswerTable(pictoMots, answerItems, pictoMap))
       } else {
         // Fallback : pictos inline
