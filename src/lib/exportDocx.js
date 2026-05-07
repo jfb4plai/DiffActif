@@ -554,10 +554,16 @@ function buildPictoAnswerTable(mots, answerItems, pictoMap) {
   })
 }
 
-// Convertit un segment de texte (avec **bold**) en tableau de TextRun
-function renderInline(segment) {
-  const tokens = segment.split(/(\*\*[^*]+\*\*)/g)
+// Convertit un segment de texte (avec **bold** et [picto: mot]) en TextRun/ImageRun
+function renderInline(segment, pictoMap = {}) {
+  const tokens = segment.split(/(\[picto:\s*[^\]]+\]|\*\*[^*]+\*\*)/gi)
   return tokens.flatMap(tok => {
+    if (/^\[picto:/i.test(tok)) {
+      const mot = tok.match(/\[picto:\s*([^\]]+)\]/i)?.[1]?.trim().toLowerCase()
+      const b64 = pictoMap[mot]
+      if (b64) return [new ImageRun({ data: b64, transformation: { width: 60, height: 60 }, type: 'png' })]
+      return [new TextRun({ text: `[${mot ?? '?'}]`, italics: true, color: GRAY_TEXT, size: 20 })]
+    }
     if (tok.startsWith('**') && tok.endsWith('**')) {
       return [new TextRun({ text: tok.slice(2, -2), bold: true, size: 22 })]
     }
@@ -592,10 +598,13 @@ function parseAuText(text, pictoMap = {}) {
       while (nextIdx < lines.length && !lines[nextIdx].trim()) nextIdx++
       const nextLine = lines[nextIdx]?.trim() ?? ''
 
-      // Découpe la ligne de réponse : d'abord sur 2+ espaces, sinon sur articles
-      let answerItems = nextLine.split(/\s{2,}/).filter(Boolean)
+      // Découpe la ligne de réponse : pipe, double-espace, ou articles
+      let answerItems = nextLine.split(/\s*\|\s*/).filter(Boolean)
       if (answerItems.length < pictoMots.length) {
-        answerItems = nextLine.split(/\s+(?=(?:un[e]?|le|la|les|du|des|l'|[A-Z])\s)/i).filter(Boolean)
+        answerItems = nextLine.split(/\s{2,}/).filter(Boolean)
+      }
+      if (answerItems.length < pictoMots.length) {
+        answerItems = nextLine.split(/\s+(?=(?:un[e]?|le|la|les|du|des|l')\s)/i).filter(Boolean)
       }
 
       if (pictoMots.length > 0 && answerItems.length >= pictoMots.length) {
@@ -630,7 +639,7 @@ function parseAuText(text, pictoMap = {}) {
       }))
     } else {
       paragraphs.push(new Paragraph({
-        children: renderInline(trimmed),
+        children: renderInline(trimmed, pictoMap),
         spacing: { after: 100 },
         keepLines: true,
         keepNext: !endOfBlock,
