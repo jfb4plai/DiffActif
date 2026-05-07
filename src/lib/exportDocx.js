@@ -294,6 +294,11 @@ export async function exportUniverselDocx({ auTexte, matiere, niveau, typeEnseig
   const doc = new Document({
     styles: { default: { document: { run: { font: 'Arial', size: 22 } } } },
     sections: [{
+      properties: {
+        page: {
+          margin: { top: 720, right: 850, bottom: 720, left: 850 }, // ~1.27cm/1.5cm — max contenu par page
+        },
+      },
       headers: {
         default: new Header({
           children: [new Paragraph({
@@ -309,7 +314,7 @@ export async function exportUniverselDocx({ auTexte, matiere, niveau, typeEnseig
         new Paragraph({
           text: matiere ? `${matiere} — Aménagements Universels` : 'Document — Aménagements Universels',
           heading: HeadingLevel.TITLE,
-          spacing: { after: 200 },
+          spacing: { after: 160 },
           run: { color: BRAND_TEAL, bold: true, size: 36 },
         }),
 
@@ -499,20 +504,60 @@ function isPageBreakMarker(line) {
     || /^\[saut.de.page\]/i.test(line.trim())
 }
 
-// Convertit un segment de texte (avec **bold** et [picto: mot]) en tableau de TextRun/ImageRun
-function renderInline(segment, pictoMap) {
-  // Sépare sur les marqueurs picto et les balises bold
-  const tokens = segment.split(/(\[picto:\s*[^\]]+\]|\*\*[^*]+\*\*)/gi)
+// Détecte une ligne contenant UNIQUEMENT des marqueurs [picto: mot]
+function isPictoOnlyLine(line) {
+  const stripped = line.replace(/\[picto:\s*[^\]]+\]/gi, '').trim()
+  return stripped === '' && /\[picto:/i.test(line)
+}
+
+// Bordures invisibles pour tableaux de pictos
+function noBorders() {
+  const none = { style: BorderStyle.NONE, size: 0, color: 'FFFFFF' }
+  return { top: none, bottom: none, left: none, right: none, insideH: none, insideV: none }
+}
+
+// Tableau picto (ligne 1) / zone de réponse (ligne 2) — une colonne par item
+function buildPictoAnswerTable(mots, answerItems, pictoMap) {
+  const n = mots.length
+  return new Table({
+    width: { size: 100, type: WidthType.PERCENTAGE },
+    borders: noBorders(),
+    rows: [
+      // Ligne 1 : pictogrammes
+      new TableRow({
+        children: mots.map(mot => new TableCell({
+          borders: noBorders(),
+          children: [new Paragraph({
+            children: (() => {
+              const b64 = pictoMap[mot]
+              return b64
+                ? [new ImageRun({ data: b64, transformation: { width: 80, height: 80 }, type: 'png' })]
+                : [new TextRun({ text: `[${mot}]`, italics: true, color: GRAY_TEXT, size: 18 })]
+            })(),
+            alignment: AlignmentType.CENTER,
+            spacing: { after: 60 },
+          })],
+        })),
+      }),
+      // Ligne 2 : zones de réponse correspondantes
+      new TableRow({
+        children: Array.from({ length: n }, (_, idx) => new TableCell({
+          borders: noBorders(),
+          children: [new Paragraph({
+            children: [new TextRun({ text: answerItems[idx]?.trim() ?? '', size: 22 })],
+            alignment: AlignmentType.CENTER,
+            spacing: { after: 100 },
+          })],
+        })),
+      }),
+    ],
+  })
+}
+
+// Convertit un segment de texte (avec **bold**) en tableau de TextRun
+function renderInline(segment) {
+  const tokens = segment.split(/(\*\*[^*]+\*\*)/g)
   return tokens.flatMap(tok => {
-    if (/^\[picto:/i.test(tok)) {
-      const mot = tok.match(/\[picto:\s*([^\]]+)\]/i)?.[1]?.trim().toLowerCase()
-      const b64 = pictoMap?.[mot]
-      if (b64) {
-        return [new ImageRun({ data: b64, transformation: { width: 60, height: 60 }, type: 'png' })]
-      }
-      // Fallback : affiche le mot entre crochets en italique
-      return [new TextRun({ text: `[${mot ?? '?'}]`, italics: true, color: GRAY_TEXT, size: 20 })]
-    }
     if (tok.startsWith('**') && tok.endsWith('**')) {
       return [new TextRun({ text: tok.slice(2, -2), bold: true, size: 22 })]
     }
@@ -520,7 +565,7 @@ function renderInline(segment, pictoMap) {
   })
 }
 
-// Parse le texte AU (applique bold sur **verbe**, pictos Arasaac, règle Même Plan)
+// Parse le texte AU (bold sur **verbe**, pictos en tableau, règle Même Plan)
 function parseAuText(text, pictoMap = {}) {
   if (!text) return [new Paragraph({ text: '—' })]
 
@@ -537,20 +582,56 @@ function parseAuText(text, pictoMap = {}) {
       continue
     }
 
+    // Ligne picto uniquement → tableau picto + zones réponse
+    if (isPictoOnlyLine(trimmed)) {
+      const pictoMots = [...trimmed.matchAll(/\[picto:\s*([^\]]+)\]/gi)]
+        .map(m => m[1].trim().toLowerCase())
+
+      // Cherche la prochaine ligne non-vide pour les zones de réponse
+      let nextIdx = i + 1
+      while (nextIdx < lines.length && !lines[nextIdx].trim()) nextIdx++
+      const nextLine = lines[nextIdx]?.trim() ?? ''
+
+      // Découpe la ligne de réponse : d'abord sur 2+ espaces, sinon sur articles
+      let answerItems = nextLine.split(/\s{2,}/).filter(Boolean)
+      if (answerItems.length < pictoMots.length) {
+        answerItems = nextLine.split(/\s+(?=(?:un[e]?|le|la|les|du|des|l'|[A-Z])\s)/i).filter(Boolean)
+      }
+
+      if (pictoMots.length > 0 && answerItems.length >= pictoMots.length) {
+        i = nextIdx  // consomme la ligne de réponse
+        paragraphs.push(buildPictoAnswerTable(pictoMots, answerItems, pictoMap))
+      } else {
+        // Fallback : pictos inline
+        paragraphs.push(new Paragraph({
+          children: pictoMots.flatMap(mot => {
+            const b64 = pictoMap[mot]
+            return b64
+              ? [new ImageRun({ data: b64, transformation: { width: 60, height: 60 }, type: 'png' }),
+                 new TextRun({ text: '  ' })]
+              : [new TextRun({ text: `[${mot}]  `, italics: true, color: GRAY_TEXT, size: 20 })]
+          }),
+          spacing: { after: 100 },
+          keepNext: true,
+        }))
+      }
+      continue
+    }
+
     const isTitle = /^#{1,3}\s/.test(trimmed) || /^(Exercice|Séance|Étape|Section|Partie)\s+\d*/i.test(trimmed)
     const endOfBlock = isEndOfBlock(lines, i)
 
     if (isTitle) {
       paragraphs.push(new Paragraph({
         children: [new TextRun({ text: trimmed.replace(/^#+\s*/, ''), bold: true, size: 24, color: BRAND_TEAL })],
-        spacing: { before: 240, after: 80 },
+        spacing: { before: 200, after: 60 },
         keepNext: true,
         keepLines: true,
       }))
     } else {
       paragraphs.push(new Paragraph({
-        children: renderInline(trimmed, pictoMap),
-        spacing: { after: 120 },
+        children: renderInline(trimmed),
+        spacing: { after: 100 },
         keepLines: true,
         keepNext: !endOfBlock,
       }))
