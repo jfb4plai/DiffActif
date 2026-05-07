@@ -378,24 +378,23 @@ export async function exportProfilDocx({
   const niveauL = NIVEAUX.find(n => n.value === niveau)?.label ?? niveau ?? ''
   const typeL   = TYPES_ENSEIGNEMENT.find(t => t.value === typeEnseignement)?.label ?? typeEnseignement ?? ''
 
-  // QR code → page /lire avec le texte de la consigne
   const withAudio = PROFILS_AUDIO.includes(profil)
   const withPictos = PROFILS_PICTOS.includes(profil) && pictos.length > 0
-  let qrImageData = null
 
-  if (withAudio && auTexte) {
-    try {
-      const lireUrl = `${window.location.origin}/lire?t=${btoa(unescape(encodeURIComponent(auTexte.slice(0, 800))))}&titre=${btoa(unescape(encodeURIComponent(matiere || 'Activité')))}`
-      const qrDataUrl = await QRCode.toDataURL(lireUrl, { errorCorrectionLevel: 'M', width: 200, margin: 1 })
-      qrImageData = qrDataUrl.split(',')[1]
-    } catch { /* QR optionnel */ }
-  }
+  // Pré-chargement pictos AU + QR par consigne (audio profiles)
+  const [pictoMap, consigneQrMap] = await Promise.all([
+    fetchPictoMap(auTexte),
+    withAudio && auTexte ? generateConsigneQrMap(auTexte) : Promise.resolve({}),
+  ])
+
+  const auParagraphs = parseAuText(auTexte, pictoMap, false, consigneQrMap)
+  const hasPictos = withPictos || Object.keys(pictoMap).length > 0
 
   const children = [
     new Paragraph({
       text: `${matiere || 'Activité'} — Version ${profilLabel}`,
       heading: HeadingLevel.TITLE,
-      spacing: { after: 200 },
+      spacing: { after: 160 },
       run: { color: BRAND_TEAL, bold: true, size: 36 },
     }),
 
@@ -410,7 +409,7 @@ export async function exportProfilDocx({
 
     spacer(),
 
-    // Pictos Arasaac (allophone)
+    // Pictos vocabulaire (allophone)
     ...(withPictos ? [
       sectionTitle('Vocabulaire illustré'),
       new Paragraph({
@@ -418,12 +417,13 @@ export async function exportProfilDocx({
           new ImageRun({ data: base64, transformation: { width: 70, height: 70 }, type: 'png' }),
           new TextRun({ text: `  ${keyword}     `, size: 18 }),
         ]),
-        spacing: { after: 320 },
+        spacing: { after: 280 },
       }),
     ] : []),
 
+    // Document AU — base de la version profil (Même Plan garanti)
     sectionTitle('Document avec aménagements universels'),
-    ...parseAuText(auTexte),
+    ...auParagraphs,
 
     spacer(),
 
@@ -432,29 +432,11 @@ export async function exportProfilDocx({
 
     spacer(),
 
-    // QR code audio (dyslexie, allophone, décrocheur)
-    ...(withAudio && qrImageData ? [
-      sectionTitle('Écouter le document'),
-      new Paragraph({
-        children: [
-          new ImageRun({ data: qrImageData, transformation: { width: 120, height: 120 }, type: 'png' }),
-        ],
-        spacing: { after: 80 },
-      }),
-      new Paragraph({
-        children: [new TextRun({
-          text: 'Scanne ce code avec ton téléphone pour écouter le document lu à voix haute.',
-          size: 18, color: GRAY_TEXT, italics: true,
-        })],
-        spacing: { after: 320 },
-      }),
-    ] : []),
-
     new Paragraph({
       children: [new TextRun({
         text: [
           'Sources RISS : Fournier (2024) dumas-04562654 · Mahi Haddad & Beaud (2025) dumas-05106961',
-          withPictos ? `  |  ${ARASAAC_ATTRIBUTION}` : '',
+          hasPictos ? `  |  ${ARASAAC_ATTRIBUTION}` : '',
         ].join(''),
         size: 16, color: GRAY_TEXT, italics: true,
       })],
@@ -466,6 +448,11 @@ export async function exportProfilDocx({
   const doc = new Document({
     styles: { default: { document: { run: { font: 'Arial', size: 22 } } } },
     sections: [{
+      properties: {
+        page: {
+          margin: { top: 720, right: 850, bottom: 720, left: 850 }, // identique AU universel
+        },
+      },
       headers: {
         default: new Header({
           children: [new Paragraph({
@@ -564,6 +551,23 @@ function buildPictoAnswerTable(mots, answerItems, pictoMap) {
   })
 }
 
+// Génère un QR code par consigne d'exercice → { 'Exercice 1 — Complète...' : base64 }
+async function generateConsigneQrMap(text) {
+  const exerciceLines = text.split('\n')
+    .map(l => l.trim())
+    .filter(l => /^(Exercice|Séance|Étape)\s+\d+/i.test(l))
+  const map = {}
+  await Promise.all(exerciceLines.map(async line => {
+    const key = line.replace(/\*\*/g, '')
+    try {
+      const url = `${window.location.origin}/lire?t=${btoa(unescape(encodeURIComponent(key)))}&titre=${btoa(unescape(encodeURIComponent('Consigne')))}`
+      const qrDataUrl = await QRCode.toDataURL(url, { errorCorrectionLevel: 'L', width: 100, margin: 1 })
+      map[key] = qrDataUrl.split(',')[1]
+    } catch { /* QR optionnel */ }
+  }))
+  return map
+}
+
 // Cherche et pré-charge les pictos Arasaac pour les verbes **verb** dans les titres d'exercice
 async function fetchVerbPictoMap(text) {
   const verbMatches = [...text.matchAll(/^(?:Exercice|Séance|Étape)[^\n]*\*\*([^*]+)\*\*/gim)]
@@ -620,7 +624,7 @@ function renderInline(segment, pictoMap = {}) {
 }
 
 // Parse le texte AU (bold sur **verbe**, pictos en tableau, règle Même Plan)
-function parseAuText(text, pictoMap = {}, withVerbPictos = false) {
+function parseAuText(text, pictoMap = {}, withVerbPictos = false, consigneQrMap = {}) {
   if (!text) return [new Paragraph({ text: '—' })]
 
   const paragraphs = []
@@ -696,8 +700,17 @@ function parseAuText(text, pictoMap = {}, withVerbPictos = false) {
 
     if (isTitle) {
       lastWasTitle = true
+      const titleKey = trimmed.replace(/^#+\s*/, '').replace(/\*\*/g, '')
+      const consigneQr = consigneQrMap[titleKey]
       paragraphs.push(new Paragraph({
-        children: renderTitle(trimmed, pictoMap, withVerbPictos),
+        children: [
+          ...renderTitle(trimmed, pictoMap, withVerbPictos),
+          ...(consigneQr ? [
+            new TextRun({ text: '   ' }),
+            new ImageRun({ data: consigneQr, transformation: { width: 32, height: 32 }, type: 'png' }),
+            new TextRun({ text: ' écouter', size: 16, color: GRAY_TEXT, italics: true }),
+          ] : []),
+        ],
         spacing: { before: 200, after: 60 },
         keepNext: true,
         keepLines: true,

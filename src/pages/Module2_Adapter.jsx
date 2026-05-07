@@ -265,6 +265,10 @@ export default function Module2_Adapter() {
   }
 
   async function exporterProfilDocx(profil) {
+    if (!auTexte) {
+      setError('Génère d\'abord le document AU universel avant d\'exporter une version profil.')
+      return
+    }
     const arTexte = profilSections[profil] || texteFinal
     setExportingProfil(profil)
 
