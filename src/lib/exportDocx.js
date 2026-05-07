@@ -502,6 +502,12 @@ function isEndOfBlock(lines, currentIndex) {
 function isPageBreakMarker(line) {
   return /^---\s*(page|saut|nouvelle\s*page|changement)/i.test(line.trim())
     || /^\[saut.de.page\]/i.test(line.trim())
+    || /^PAGE\s+\d+$/i.test(line.trim())
+}
+
+// Détecte une ligne purement décorative (points, tirets, underscores répétés)
+function isDecorativeLine(line) {
+  return /^[.\-_…]{4,}$/.test(line.trim())
 }
 
 // Détecte une ligne contenant UNIQUEMENT des marqueurs [picto: mot] (et séparateurs |)
@@ -583,6 +589,9 @@ function parseAuText(text, pictoMap = {}) {
 
     if (!trimmed) { paragraphs.push(spacer()); continue }
 
+    // Ligne décorative → ignorée
+    if (isDecorativeLine(trimmed)) continue
+
     if (isPageBreakMarker(trimmed)) {
       paragraphs.push(new Paragraph({ text: '', pageBreakBefore: true }))
       continue
@@ -631,8 +640,10 @@ function parseAuText(text, pictoMap = {}) {
     const endOfBlock = isEndOfBlock(lines, i)
 
     if (isTitle) {
+      // Titre : tout en gras teal, marqueurs ** retirés
+      const titleText = trimmed.replace(/^#+\s*/, '').replace(/\*\*/g, '')
       paragraphs.push(new Paragraph({
-        children: [new TextRun({ text: trimmed.replace(/^#+\s*/, ''), bold: true, size: 24, color: BRAND_TEAL })],
+        children: [new TextRun({ text: titleText, bold: true, size: 24, color: BRAND_TEAL })],
         spacing: { before: 200, after: 60 },
         keepNext: true,
         keepLines: true,
