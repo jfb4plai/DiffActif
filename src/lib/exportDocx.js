@@ -504,9 +504,9 @@ function isPageBreakMarker(line) {
     || /^\[saut.de.page\]/i.test(line.trim())
 }
 
-// Détecte une ligne contenant UNIQUEMENT des marqueurs [picto: mot]
+// Détecte une ligne contenant UNIQUEMENT des marqueurs [picto: mot] (et séparateurs |)
 function isPictoOnlyLine(line) {
-  const stripped = line.replace(/\[picto:\s*[^\]]+\]/gi, '').trim()
+  const stripped = line.replace(/\[picto:\s*[^\]]+\]/gi, '').replace(/[\|\s]/g, '')
   return stripped === '' && /\[picto:/i.test(line)
 }
 
