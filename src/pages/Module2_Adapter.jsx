@@ -6,6 +6,84 @@ import { exportAdaptationsDocx, exportUniverselDocx, exportProfilDocx } from '..
 import { extractFile } from '../lib/extractFile'
 import { fetchPictosForText } from '../lib/arasaac'
 
+// ── Validation AU (client-side) ───────────────────────────────
+function validateAuRules(text) {
+  const lines = text.split('\n')
+  const exerciceLines = lines.filter(l => /^exercice\s+\d+/i.test(l.trim()))
+
+  // Règle 1 : verbe d'action en gras (**Verbe**) dans les lignes d'exercice
+  const avecVerbeGras = exerciceLines.filter(l => /\*\*[A-ZÀ-Ÿa-zà-ÿ]{2,}\*\*/.test(l))
+  const verbeGrasOk = exerciceLines.length === 0 || avecVerbeGras.length === exerciceLines.length
+
+  // Règle 2 : exercices numérotés
+  const numerotationOk = exerciceLines.length > 0
+
+  // Règle 3 : phrases courtes (≤ 15 mots) — contrôle sur les lignes de consigne
+  const longues = exerciceLines.filter(l => l.trim().split(/\s+/).length > 16)
+  const phrasesCourtesOk = longues.length === 0
+
+  // Règle 4 : espaces-réponse préservés (______)
+  const nbBlancs = (text.match(/_{4,}/g) || []).length
+
+  // Règle 5 : marqueurs [saut_de_page]
+  const nbSauts = (text.match(/\[saut_de_page\]/gi) || []).length
+
+  // Règle 6 : aucun marqueur [? ?] résiduel (doutes non corrigés)
+  const nbDoutes = (text.match(/\[\?/g) || []).length
+  const sansDoutesOk = nbDoutes === 0
+
+  return [
+    {
+      id: 'verbe_gras',
+      label: 'Verbe d\'action en gras dans les consignes',
+      ok: verbeGrasOk,
+      detail: exerciceLines.length > 0
+        ? `${avecVerbeGras.length}/${exerciceLines.length} consigne(s) correctes`
+        : 'Aucune ligne "Exercice N" détectée',
+      warn: exerciceLines.length === 0,
+    },
+    {
+      id: 'numerotation',
+      label: 'Exercices numérotés (Exercice 1, 2…)',
+      ok: numerotationOk,
+      detail: numerotationOk ? `${exerciceLines.length} exercice(s)` : 'Aucun exercice numéroté trouvé',
+    },
+    {
+      id: 'phrases_courtes',
+      label: 'Consignes ≤ 15 mots',
+      ok: phrasesCourtesOk,
+      detail: phrasesCourtesOk ? 'Toutes les consignes sont courtes' : `${longues.length} consigne(s) trop longue(s)`,
+    },
+    {
+      id: 'meme_plan',
+      label: 'Règle "Même Plan" — sauts de page',
+      ok: true,
+      detail: nbSauts > 0 ? `${nbSauts} saut(s) de page inséré(s)` : 'Aucun saut (thème unique ou non requis)',
+      info: true,
+    },
+    {
+      id: 'blancs',
+      label: 'Espaces-réponse préservés (______)',
+      ok: true,
+      detail: nbBlancs > 0 ? `${nbBlancs} espace(s)-réponse` : 'Aucun espace-réponse (normal si texte sans blancs)',
+      info: nbBlancs === 0,
+    },
+    {
+      id: 'police',
+      label: 'Police Arial appliquée',
+      ok: true,
+      detail: 'Appliquée à l\'export DOCX — non visible ici',
+      info: true,
+    },
+    {
+      id: 'sans_doutes',
+      label: 'Aucun passage incertain [? ?] résiduel',
+      ok: sansDoutesOk,
+      detail: sansDoutesOk ? 'Texte propre' : `${nbDoutes} passage(s) incertain(s) — corrigez avant export`,
+    },
+  ]
+}
+
 export default function Module2_Adapter() {
   const { user, profile } = useAuth()
 
@@ -40,6 +118,9 @@ export default function Module2_Adapter() {
   const [texteFinal, setTexteFinal] = useState('')
   const [saved, setSaved]           = useState(false)
   const [saving, setSaving]         = useState(false)
+
+  // Validation AU
+  const [auValidation, setAuValidation] = useState(null)
 
   // Export
   const [exporting, setExporting]   = useState(false)
@@ -111,6 +192,7 @@ export default function Module2_Adapter() {
       const data = await res.json()
       if (!res.ok) throw new Error(data.error ?? 'Erreur serveur')
       setAuTexte(data.text)
+      setAuValidation(validateAuRules(data.text))
     } catch (err) {
       setError(err.message)
     }
@@ -359,6 +441,37 @@ export default function Module2_Adapter() {
               <div className="bg-white rounded-xl p-4 text-sm text-gray-700 whitespace-pre-wrap leading-relaxed border border-brand-100 max-h-48 overflow-y-auto">
                 {auTexte}
               </div>
+
+              {/* Validation AU */}
+              {auValidation && (
+                <div className="rounded-xl border border-gray-200 bg-white overflow-hidden">
+                  <div className="px-4 py-2 bg-gray-50 border-b border-gray-200">
+                    <p className="text-xs font-semibold text-gray-700">Vérification des règles AU</p>
+                  </div>
+                  <ul className="divide-y divide-gray-100">
+                    {auValidation.map(rule => (
+                      <li key={rule.id} className="flex items-start gap-3 px-4 py-2">
+                        <span className={`mt-0.5 text-sm font-bold shrink-0 ${
+                          rule.info || rule.warn
+                            ? 'text-blue-400'
+                            : rule.ok
+                              ? 'text-green-500'
+                              : 'text-red-500'
+                        }`}>
+                          {rule.info ? 'ℹ' : rule.warn ? '?' : rule.ok ? '✓' : '✗'}
+                        </span>
+                        <div>
+                          <p className={`text-xs font-medium ${rule.ok ? 'text-gray-700' : 'text-red-700'}`}>
+                            {rule.label}
+                          </p>
+                          <p className="text-xs text-gray-400">{rule.detail}</p>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
               <button
                 onClick={exporterAuDocx}
                 disabled={exporting}

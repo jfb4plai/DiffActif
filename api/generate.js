@@ -179,6 +179,11 @@ RÈGLE "MÊME PLAN" (non négociable) :
 - Ne jamais séparer une consigne de ses items/phrases/blancs.
 - Ordre strict : [saut_de_page si besoin] → Exercice N — **Verbe** ... → contenu de l'exercice
 
+DESSINS ET IMAGES DANS L'EXERCICE :
+- Si l'exercice original contient des images ou des dessins qui servent de support pédagogique (ex : dessin d'un objet dont l'élève doit trouver ou compléter le nom), remplace ce support par : [picto: mot_représenté]
+- Le mot est le substantif exact représenté par le dessin (ex : [picto: pastille], [picto: chenille], [picto: jonquille], [picto: coquille])
+- Ne pas insérer de picto pour les éléments purement décoratifs sans lien avec la tâche de l'élève
+
 RÈGLES :
 - Retourne le document reformaté, rien d'autre
 - Conserve la structure complète (aucun contenu supprimé)

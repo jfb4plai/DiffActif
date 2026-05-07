@@ -11,7 +11,7 @@ import {
 import { saveAs } from 'file-saver'
 import QRCode from 'qrcode'
 import { PROFILS, NIVEAUX, TYPES_ENSEIGNEMENT } from './constants'
-import { ARASAAC_ATTRIBUTION } from './arasaac'
+import { ARASAAC_ATTRIBUTION, searchArasaac, pictoToBase64 } from './arasaac'
 
 const BRAND_TEAL = '0a9370'
 const GRAY_LIGHT = 'F3F4F6'
@@ -258,6 +258,26 @@ function metaTable(rows) {
 }
 
 // ──────────────────────────────────────────
+// Pictos Arasaac — résolution des marqueurs [picto: mot]
+// Retourne un map { mot: base64 } pour tous les [picto:] trouvés dans le texte
+// ──────────────────────────────────────────
+
+async function fetchPictoMap(text) {
+  const matches = [...text.matchAll(/\[picto:\s*([^\]]+)\]/gi)]
+  if (matches.length === 0) return {}
+  const entries = await Promise.all(
+    matches.map(async ([, mot]) => {
+      const keyword = mot.trim().toLowerCase()
+      const found = await searchArasaac(keyword)
+      if (!found) return [keyword, null]
+      const base64 = await pictoToBase64(found.url)
+      return [keyword, base64]
+    })
+  )
+  return Object.fromEntries(entries.filter(([, b64]) => b64 !== null))
+}
+
+// ──────────────────────────────────────────
 // Export document AU universel (Module 2)
 // ──────────────────────────────────────────
 
@@ -265,6 +285,11 @@ export async function exportUniverselDocx({ auTexte, matiere, niveau, typeEnseig
   const date    = new Date().toLocaleDateString('fr-BE', { day: 'numeric', month: 'long', year: 'numeric' })
   const niveauL = NIVEAUX.find(n => n.value === niveau)?.label ?? niveau ?? ''
   const typeL   = TYPES_ENSEIGNEMENT.find(t => t.value === typeEnseignement)?.label ?? typeEnseignement ?? ''
+
+  // Pré-chargement des pictos avant construction du Document
+  const pictoMap = await fetchPictoMap(auTexte)
+  const hasPictos = Object.keys(pictoMap).length > 0
+  const auParagraphs = parseAuText(auTexte, pictoMap)
 
   const doc = new Document({
     styles: { default: { document: { run: { font: 'Arial', size: 22 } } } },
@@ -299,13 +324,16 @@ export async function exportUniverselDocx({ auTexte, matiere, niveau, typeEnseig
         spacer(),
 
         sectionTitle('Document avec aménagements universels'),
-        ...parseAuText(auTexte),
+        ...auParagraphs,
 
         spacer(),
 
         new Paragraph({
           children: [new TextRun({
-            text: 'Aménagements Universels (CUA) — Sources RISS : Rusconi (2025) W4414205903 · Alvarez (2024) W4402615917',
+            text: [
+              'Aménagements Universels (CUA) — Sources RISS : Rusconi (2025) W4414205903 · Alvarez (2024) W4402615917',
+              hasPictos ? `  |  ${ARASAAC_ATTRIBUTION}` : '',
+            ].join(''),
             size: 16, color: GRAY_TEXT, italics: true,
           })],
           border: { top: { style: BorderStyle.SINGLE, size: 2, color: 'E5E7EB' } },
@@ -471,8 +499,29 @@ function isPageBreakMarker(line) {
     || /^\[saut.de.page\]/i.test(line.trim())
 }
 
-// Parse le texte AU (applique bold sur **verbe**, règle Même Plan)
-function parseAuText(text) {
+// Convertit un segment de texte (avec **bold** et [picto: mot]) en tableau de TextRun/ImageRun
+function renderInline(segment, pictoMap) {
+  // Sépare sur les marqueurs picto et les balises bold
+  const tokens = segment.split(/(\[picto:\s*[^\]]+\]|\*\*[^*]+\*\*)/gi)
+  return tokens.flatMap(tok => {
+    if (/^\[picto:/i.test(tok)) {
+      const mot = tok.match(/\[picto:\s*([^\]]+)\]/i)?.[1]?.trim().toLowerCase()
+      const b64 = pictoMap?.[mot]
+      if (b64) {
+        return [new ImageRun({ data: b64, transformation: { width: 60, height: 60 }, type: 'png' })]
+      }
+      // Fallback : affiche le mot entre crochets en italique
+      return [new TextRun({ text: `[${mot ?? '?'}]`, italics: true, color: GRAY_TEXT, size: 20 })]
+    }
+    if (tok.startsWith('**') && tok.endsWith('**')) {
+      return [new TextRun({ text: tok.slice(2, -2), bold: true, size: 22 })]
+    }
+    return tok ? [new TextRun({ text: tok, size: 22 })] : []
+  })
+}
+
+// Parse le texte AU (applique bold sur **verbe**, pictos Arasaac, règle Même Plan)
+function parseAuText(text, pictoMap = {}) {
   if (!text) return [new Paragraph({ text: '—' })]
 
   const paragraphs = []
@@ -495,21 +544,15 @@ function parseAuText(text) {
       paragraphs.push(new Paragraph({
         children: [new TextRun({ text: trimmed.replace(/^#+\s*/, ''), bold: true, size: 24, color: BRAND_TEAL })],
         spacing: { before: 240, after: 80 },
-        keepNext: true,   // consigne TOUJOURS avec sa tâche
+        keepNext: true,
         keepLines: true,
       }))
     } else {
-      // Remplace **mot** par TextRun bold (verbes d'action AU)
-      const parts = trimmed.split(/(\*\*[^*]+\*\*)/)
       paragraphs.push(new Paragraph({
-        children: parts.map(part =>
-          part.startsWith('**') && part.endsWith('**')
-            ? new TextRun({ text: part.slice(2, -2), bold: true, size: 22 })
-            : new TextRun({ text: part, size: 22 })
-        ),
+        children: renderInline(trimmed, pictoMap),
         spacing: { after: 120 },
         keepLines: true,
-        keepNext: !endOfBlock,  // chaîne avec le suivant sauf fin de bloc
+        keepNext: !endOfBlock,
       }))
     }
   }
