@@ -218,8 +218,8 @@ export async function exportSequenceDocx({
 // Helpers
 // ──────────────────────────────────────────
 
-function spacer() {
-  return new Paragraph({ text: '', spacing: { after: 200 } })
+function spacer(keepNext = false) {
+  return new Paragraph({ text: '', spacing: { after: 200 }, ...(keepNext ? { keepNext: true } : {}) })
 }
 
 function sectionTitle(text) {
@@ -626,26 +626,29 @@ function parseAuText(text, pictoMap = {}, withVerbPictos = false) {
   const paragraphs = []
   const lines = text.split('\n')
   let lastWasPageBreak = false
+  let lastWasTitle = false  // pour propager keepNext à travers le spacer suivant un titre
 
   for (let i = 0; i < lines.length; i++) {
     const trimmed = lines[i].trim()
 
-    if (!trimmed) { paragraphs.push(spacer()); continue }
+    if (!trimmed) { paragraphs.push(spacer(lastWasTitle)); continue }
 
     // Ligne décorative → ignorée
-    if (isDecorativeLine(trimmed)) continue
+    if (isDecorativeLine(trimmed)) { lastWasTitle = false; continue }
 
     if (isPageBreakMarker(trimmed)) {
       if (!lastWasPageBreak) {
         paragraphs.push(new Paragraph({ text: '', pageBreakBefore: true }))
         lastWasPageBreak = true
       }
+      lastWasTitle = false
       continue
     }
     lastWasPageBreak = false
 
     // Ligne picto uniquement → tableau picto + zones réponse
     if (isPictoOnlyLine(trimmed)) {
+      lastWasTitle = false
       const pictoMots = [...trimmed.matchAll(/\[picto:\s*([^\]]+)\]/gi)]
         .map(m => m[1].trim().toLowerCase())
 
@@ -653,6 +656,10 @@ function parseAuText(text, pictoMap = {}, withVerbPictos = false) {
       let nextIdx = i + 1
       while (nextIdx < lines.length && !lines[nextIdx].trim()) nextIdx++
       const nextLine = lines[nextIdx]?.trim() ?? ''
+
+      // Si la ligne suivante est un titre, ne pas la consommer — picto inline uniquement
+      const nextIsTitle = /^(Exercice|Séance|Étape|Section|Partie)\s+\d*/i.test(nextLine)
+        || /^#{1,3}\s/.test(nextLine)
 
       // Découpe la ligne de réponse : pipe, double-espace, ou articles
       let answerItems = nextLine.split(/\s*\|\s*/).filter(Boolean)
@@ -663,7 +670,8 @@ function parseAuText(text, pictoMap = {}, withVerbPictos = false) {
         answerItems = nextLine.split(/\s+(?=(?:un[e]?|le|la|les|du|des|l')\s)/i).filter(Boolean)
       }
 
-      if (pictoMots.length > 0 && answerItems.length >= pictoMots.length) {
+      // Tableau uniquement si N pictos = N zones réponse (correspondance exacte) et suivant non-titre
+      if (pictoMots.length > 0 && answerItems.length === pictoMots.length && !nextIsTitle) {
         i = nextIdx  // consomme la ligne de réponse
         paragraphs.push(buildPictoAnswerTable(pictoMots, answerItems, pictoMap))
       } else {
@@ -687,6 +695,7 @@ function parseAuText(text, pictoMap = {}, withVerbPictos = false) {
     const endOfBlock = isEndOfBlock(lines, i)
 
     if (isTitle) {
+      lastWasTitle = true
       paragraphs.push(new Paragraph({
         children: renderTitle(trimmed, pictoMap, withVerbPictos),
         spacing: { before: 200, after: 60 },
@@ -694,6 +703,7 @@ function parseAuText(text, pictoMap = {}, withVerbPictos = false) {
         keepLines: true,
       }))
     } else {
+      lastWasTitle = false
       paragraphs.push(new Paragraph({
         children: renderInline(trimmed, pictoMap),
         spacing: { after: 100 },
