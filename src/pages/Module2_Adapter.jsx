@@ -582,7 +582,7 @@ export default function Module2_Adapter() {
                 disabled={exporting || !texteFinal.trim()}
                 className="btn-secondary text-sm"
               >
-                {exporting ? 'Export...' : '⬇ DOCX (toutes adaptations)'}
+                {exporting ? 'Export...' : '⬇ Synthèse de toutes les adaptations'}
               </button>
               <button
                 onClick={sauvegarder}
