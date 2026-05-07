@@ -193,6 +193,7 @@ RÈGLES :
 - Conserve la structure complète (aucun contenu supprimé)
 - N'ajoute pas de commentaire, d'introduction ni de conclusion
 - Les blancs à compléter restent des blancs : ______
+- Utilise UNIQUEMENT des guillemets français : « mot » — jamais de guillemets anglais " ou "
 
 ${antiClaudisation(niveauLabel, typeLabel)}`
   }

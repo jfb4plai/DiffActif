@@ -562,7 +562,7 @@ async function generateConsigneQrMap(text) {
     const key = line.replace(/\*\*/g, '')
     try {
       const url = `${window.location.origin}/lire?t=${btoa(unescape(encodeURIComponent(key)))}&titre=${btoa(unescape(encodeURIComponent('Consigne')))}`
-      const qrDataUrl = await QRCode.toDataURL(url, { errorCorrectionLevel: 'L', scale: 8, margin: 2 })
+      const qrDataUrl = await QRCode.toDataURL(url, { errorCorrectionLevel: 'L', scale: 5, margin: 1 })
       map[key] = qrDataUrl.split(',')[1]
     } catch { /* QR optionnel */ }
   }))
@@ -708,7 +708,7 @@ function parseAuText(text, pictoMap = {}, withVerbPictos = false, consigneQrMap 
           ...renderTitle(trimmed, pictoMap, withVerbPictos),
           ...(consigneQr ? [
             new TextRun({ text: '   ' }),
-            new ImageRun({ data: consigneQr, transformation: { width: 120, height: 120 }, type: 'png' }),
+            new ImageRun({ data: consigneQr, transformation: { width: 60, height: 60 }, type: 'png' }),
             new TextRun({ text: ' écouter', size: 16, color: GRAY_TEXT, italics: true }),
           ] : []),
         ],
