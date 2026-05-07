@@ -105,8 +105,9 @@ export default function Module2_Adapter() {
   const [nbDoutes, setNbDoutes]   = useState(0)
 
   // Document AU universel
-  const [generatingAu, setGeneratingAu] = useState(false)
-  const [auTexte, setAuTexte]           = useState('')
+  const [generatingAu, setGeneratingAu]       = useState(false)
+  const [auTexte, setAuTexte]                 = useState('')
+  const [withVerbPictos, setWithVerbPictos]   = useState(false)
 
   // Génération IA adaptations par profil
   const [generating, setGenerating] = useState(false)
@@ -259,7 +260,7 @@ export default function Module2_Adapter() {
   async function exporterAuDocx() {
     if (!auTexte) return
     setExporting(true)
-    await exportUniverselDocx({ auTexte, matiere, niveau, typeEnseignement: typeEns })
+    await exportUniverselDocx({ auTexte, matiere, niveau, typeEnseignement: typeEns, withVerbPictos })
     setExporting(false)
   }
 
@@ -472,6 +473,17 @@ export default function Module2_Adapter() {
                 </div>
               )}
 
+              <label className="flex items-center gap-2 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={withVerbPictos}
+                  onChange={e => setWithVerbPictos(e.target.checked)}
+                  className="w-4 h-4 accent-brand-500"
+                />
+                <span className="text-xs text-gray-600">
+                  Picto Arasaac avant chaque verbe d'action (option)
+                </span>
+              </label>
               <button
                 onClick={exporterAuDocx}
                 disabled={exporting}

@@ -281,15 +281,19 @@ async function fetchPictoMap(text) {
 // Export document AU universel (Module 2)
 // ──────────────────────────────────────────
 
-export async function exportUniverselDocx({ auTexte, matiere, niveau, typeEnseignement }) {
+export async function exportUniverselDocx({ auTexte, matiere, niveau, typeEnseignement, withVerbPictos = false }) {
   const date    = new Date().toLocaleDateString('fr-BE', { day: 'numeric', month: 'long', year: 'numeric' })
   const niveauL = NIVEAUX.find(n => n.value === niveau)?.label ?? niveau ?? ''
   const typeL   = TYPES_ENSEIGNEMENT.find(t => t.value === typeEnseignement)?.label ?? typeEnseignement ?? ''
 
   // Pré-chargement des pictos avant construction du Document
-  const pictoMap = await fetchPictoMap(auTexte)
-  const hasPictos = Object.keys(pictoMap).length > 0
-  const auParagraphs = parseAuText(auTexte, pictoMap)
+  const [pictoMap, verbPictoMap] = await Promise.all([
+    fetchPictoMap(auTexte),
+    withVerbPictos ? fetchVerbPictoMap(auTexte) : Promise.resolve({}),
+  ])
+  const mergedPictoMap = { ...pictoMap, ...verbPictoMap }
+  const hasPictos = Object.keys(mergedPictoMap).length > 0
+  const auParagraphs = parseAuText(auTexte, mergedPictoMap, withVerbPictos)
 
   const doc = new Document({
     styles: { default: { document: { run: { font: 'Arial', size: 22 } } } },
@@ -505,9 +509,9 @@ function isPageBreakMarker(line) {
     || /^PAGE\s+\d+$/i.test(line.trim())
 }
 
-// Détecte une ligne purement décorative (points, tirets, underscores répétés)
+// Détecte une ligne purement décorative (points, tirets, underscores répétés ≥ 3)
 function isDecorativeLine(line) {
-  return /^[.\-_…]{4,}$/.test(line.trim())
+  return /^[.\-_…]{3,}$/.test(line.trim())
 }
 
 // Détecte une ligne contenant UNIQUEMENT des marqueurs [picto: mot] (et séparateurs |)
@@ -560,6 +564,44 @@ function buildPictoAnswerTable(mots, answerItems, pictoMap) {
   })
 }
 
+// Cherche et pré-charge les pictos Arasaac pour les verbes **verb** dans les titres d'exercice
+async function fetchVerbPictoMap(text) {
+  const verbMatches = [...text.matchAll(/^(?:Exercice|Séance|Étape)[^\n]*\*\*([^*]+)\*\*/gim)]
+  if (verbMatches.length === 0) return {}
+  const verbs = [...new Set(verbMatches.map(m => m[1].trim().toLowerCase()))]
+  const entries = await Promise.all(
+    verbs.map(async verb => {
+      const found = await searchArasaac(verb)
+      if (!found) return [`verb:${verb}`, null]
+      const base64 = await pictoToBase64(found.url)
+      return [`verb:${verb}`, base64]
+    })
+  )
+  return Object.fromEntries(entries.filter(([, b64]) => b64 !== null))
+}
+
+// Rendu d'une ligne de titre (Exercice N — **Verbe** consigne)
+// Verbe en orange bold, reste en teal bold — picto optionnel avant le verbe
+function renderTitle(text, pictoMap = {}, withVerbPictos = false) {
+  const cleanText = text.replace(/^#+\s*/, '')
+  const tokens = cleanText.split(/(\*\*[^*]+\*\*)/g)
+  const children = []
+  for (const tok of tokens) {
+    if (tok.startsWith('**') && tok.endsWith('**')) {
+      const verbText = tok.slice(2, -2)
+      const verbKey = `verb:${verbText.toLowerCase()}`
+      if (withVerbPictos && pictoMap[verbKey]) {
+        children.push(new ImageRun({ data: pictoMap[verbKey], transformation: { width: 26, height: 26 }, type: 'png' }))
+        children.push(new TextRun({ text: ' ', size: 24 }))
+      }
+      children.push(new TextRun({ text: verbText, bold: true, size: 24, color: 'f97316' })) // orange accent
+    } else if (tok) {
+      children.push(new TextRun({ text: tok, bold: true, size: 24, color: BRAND_TEAL }))
+    }
+  }
+  return children.length > 0 ? children : [new TextRun({ text: cleanText, bold: true, size: 24, color: BRAND_TEAL })]
+}
+
 // Convertit un segment de texte (avec **bold** et [picto: mot]) en TextRun/ImageRun
 function renderInline(segment, pictoMap = {}) {
   const tokens = segment.split(/(\[picto:\s*[^\]]+\]|\*\*[^*]+\*\*)/gi)
@@ -578,11 +620,12 @@ function renderInline(segment, pictoMap = {}) {
 }
 
 // Parse le texte AU (bold sur **verbe**, pictos en tableau, règle Même Plan)
-function parseAuText(text, pictoMap = {}) {
+function parseAuText(text, pictoMap = {}, withVerbPictos = false) {
   if (!text) return [new Paragraph({ text: '—' })]
 
   const paragraphs = []
   const lines = text.split('\n')
+  let lastWasPageBreak = false
 
   for (let i = 0; i < lines.length; i++) {
     const trimmed = lines[i].trim()
@@ -593,9 +636,13 @@ function parseAuText(text, pictoMap = {}) {
     if (isDecorativeLine(trimmed)) continue
 
     if (isPageBreakMarker(trimmed)) {
-      paragraphs.push(new Paragraph({ text: '', pageBreakBefore: true }))
+      if (!lastWasPageBreak) {
+        paragraphs.push(new Paragraph({ text: '', pageBreakBefore: true }))
+        lastWasPageBreak = true
+      }
       continue
     }
+    lastWasPageBreak = false
 
     // Ligne picto uniquement → tableau picto + zones réponse
     if (isPictoOnlyLine(trimmed)) {
@@ -640,10 +687,8 @@ function parseAuText(text, pictoMap = {}) {
     const endOfBlock = isEndOfBlock(lines, i)
 
     if (isTitle) {
-      // Titre : tout en gras teal, marqueurs ** retirés
-      const titleText = trimmed.replace(/^#+\s*/, '').replace(/\*\*/g, '')
       paragraphs.push(new Paragraph({
-        children: [new TextRun({ text: titleText, bold: true, size: 24, color: BRAND_TEAL })],
+        children: renderTitle(trimmed, pictoMap, withVerbPictos),
         spacing: { before: 200, after: 60 },
         keepNext: true,
         keepLines: true,
