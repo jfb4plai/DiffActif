@@ -708,7 +708,7 @@ function parseAuText(text, pictoMap = {}, withVerbPictos = false, consigneQrMap 
 
     if (isTitle) {
       lastWasTitle = true
-      const titleKey = trimmed.replace(/^#+\s*/, '').replace(/\*\*/g, '')
+      const titleKey = trimmed.replace(/^#+\s*/, '').replace(/\*\*/g, '').replace(/\u2014/g, ' - ')
       const consigneQr = consigneQrMap[titleKey]
       paragraphs.push(new Paragraph({
         children: [
