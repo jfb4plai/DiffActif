@@ -106,11 +106,22 @@ La base de travail est un document déjà mis en Aménagements Universels (AU).
 
 Format par profil :
 [PROFIL] — Conseils pédagogiques
-- Conseil 1 : [stratégie concrète, 1–2 phrases]
+- Conseil 1 : [stratégie concrète, 1–2 phrases] (Auteur, année si source RISS applicable)
   Exemple sur ce document : [cite un exercice ou une consigne précise du document AU]
 - Conseil 2 : [idem]
 - Conseil 3 : [idem]
 (3–4 conseils par profil, pas plus)
+
+Quand un conseil s'appuie directement sur une source ci-dessous, ajoute (Auteur, année) en fin de ligne — uniquement si le lien est réel.
+
+SOURCES RISS disponibles :
+Dyslexie/Dysorthographie : Pattaro (2023) dumas-04361111 · Barbe et al. (2022) dumas-03978495 · Vadant (2025) dumas-05446436
+TDAH : Bourgeois (2024) dumas-04903104 · Fosseux (2014) dumas-01072147
+Dyscalculie : Thibaut (2016) dumas-01488139 · Le Cam & Toussaint (2017) dumas-01549091
+Allophone : Bruisse et al. (2019) dumas-02159822 · Pégon Cachard-Berger (2021) dumas-03613125
+Décrocheur : Fromaget (2020) dumas-02867520 · Mons et al. (2017) hal-04622700
+HPI : Masson (2024) dumas-05293977 · Cuadrado et al. (2023) hal-04108902
+Dyspraxie : Brenot (2025) dumas-05410646 · Azzimani (2023) dumas-04568020
 
 Après le dernier profil, insère exactement ce bloc :
 ---

@@ -110,7 +110,7 @@ export async function exportAdaptationsDocx({
         new Paragraph({
           children: [
             new TextRun({
-              text: 'Sources RISS : Fournier (2024) dumas-04562654 · Mahi Haddad & Beaud (2025) dumas-05106961 · Alvarez (2024) W4402615917',
+              text: 'Sources RISS — Dyslexie : Pattaro (2023) dumas-04361111 · Barbe et al. (2022) dumas-03978495 · Vadant (2025) dumas-05446436  |  TDAH : Bourgeois (2024) dumas-04903104 · Fosseux (2014) dumas-01072147  |  Dyscalculie : Thibaut (2016) dumas-01488139  |  Allophone : Bruisse et al. (2019) dumas-02159822  |  Décrocheur : Fromaget (2020) dumas-02867520 · Mons et al. (2017) hal-04622700  |  HPI : Masson (2024) dumas-05293977  |  Dyspraxie : Brenot (2025) dumas-05410646',
               size: 16,
               color: GRAY_TEXT,
               italics: true,
