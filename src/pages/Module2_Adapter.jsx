@@ -531,7 +531,7 @@ export default function Module2_Adapter() {
         disabled={!canGenerate || generating}
         className="btn-accent w-full py-3 text-base font-semibold"
       >
-        {generating ? 'Génération en cours...' : `Générer les adaptations (${profilsChoisis.length} profil${profilsChoisis.length > 1 ? 's' : ''})`}
+        {generating ? 'Génération en cours...' : `Recevoir des conseils (${profilsChoisis.length} profil${profilsChoisis.length > 1 ? 's' : ''})`}
       </button>
 
       {!canGenerate && activite.length < 20 && activite.length > 0 && (
