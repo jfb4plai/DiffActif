@@ -235,7 +235,7 @@ export default function Module2_Adapter() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           action: 'adapter_activite',
-          context: { activite, objectif, profils: profilsChoisis, niveau, type_enseignement: typeEns, matiere },
+          context: { activite, objectif, profils: profilsChoisis, niveau, type_enseignement: typeEns, matiere, au_texte: auTexte || null },
         }),
       })
       const data = await res.json()
@@ -549,7 +549,7 @@ export default function Module2_Adapter() {
       {resultat && (
         <div className="card border-brand-200">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="font-semibold text-gray-800">Adaptations proposées</h2>
+            <h2 className="font-semibold text-gray-800">Conseils pédagogiques par profil</h2>
             <span className="text-xs text-gray-400 bg-gray-100 px-2 py-1 rounded-full">
               80% IA — à personnaliser
             </span>
@@ -582,7 +582,7 @@ export default function Module2_Adapter() {
                 disabled={exporting || !texteFinal.trim()}
                 className="btn-secondary text-sm"
               >
-                {exporting ? 'Export...' : '⬇ Synthèse de toutes les adaptations'}
+                {exporting ? 'Export...' : '⬇ Exporter les conseils (.docx)'}
               </button>
               <button
                 onClick={sauvegarder}
@@ -593,41 +593,6 @@ export default function Module2_Adapter() {
               </button>
             </div>
           </div>
-
-          {/* Export par profil */}
-          {profilsChoisis.length > 0 && (
-            <div className="mt-4 pt-4 border-t border-gray-100">
-              <p className="text-xs font-semibold text-gray-700 mb-2">
-                Documents par profil (AU + AR spécifiques)
-              </p>
-              <div className="flex flex-wrap gap-2">
-                {profilsChoisis.map(profil => {
-                  const def = PROFILS.find(p => p.value === profil)
-                  const hasAudio = ['dyslexie', 'allophone', 'decrocheur'].includes(profil)
-                  const hasPictos = profil === 'allophone'
-                  return (
-                    <button
-                      key={profil}
-                      onClick={() => exporterProfilDocx(profil)}
-                      disabled={!!exportingProfil || !texteFinal.trim()}
-                      className="btn-secondary text-xs flex items-center gap-1"
-                    >
-                      {exportingProfil === profil ? 'Export...' : (
-                        <>
-                          {def?.icon} {def?.label.split('/')[0].trim()}
-                          {hasAudio && ' 🔊'}
-                          {hasPictos && ' 🖼'}
-                        </>
-                      )}
-                    </button>
-                  )
-                })}
-              </div>
-              <p className="text-xs text-gray-400 mt-2">
-                🔊 = QR code audio · 🖼 = pictogrammes Arasaac
-              </p>
-            </div>
-          )}
         </div>
       )}
     </div>

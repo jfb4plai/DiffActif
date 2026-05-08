@@ -36,7 +36,7 @@ export default async function handler(req, res) {
       },
       body: JSON.stringify({
         model: 'claude-haiku-4-5-20251001',
-        max_tokens: action === 'appliquer_au' ? 2500 : 1200,
+        max_tokens: action === 'appliquer_au' ? 2500 : action === 'adapter_activite' ? 2000 : 1200,
         system: systemPrompt,
         messages: [{ role: 'user', content: userMessage }],
       }),
@@ -101,18 +101,21 @@ function buildSystemPrompt(action, context) {
   if (action === 'adapter_activite') {
     return `${base}
 
-Tu génères des adaptations concrètes d'une activité pour des profils d'élèves identifiés (DYS, TDAH, allophone, décrocheur, HPI).
+Tu fournis des conseils pédagogiques ciblés par profil d'élèves à besoins spécifiques.
+La base de travail est un document déjà mis en Aménagements Universels (AU).
 
-Chaque adaptation suit ce format :
-[PROFIL] — Adaptation (2–4 phrases max)
-- Ce que l'enseignant modifie dans la consigne ou le support
-- Ce que l'enseignant garde identique (objectif d'apprentissage)
-- L'ajustement de forme (pas de fond) qui rend l'activité accessible
+Format par profil :
+[PROFIL] — Conseils pédagogiques
+- Conseil 1 : [stratégie concrète, 1–2 phrases]
+  Exemple sur ce document : [cite un exercice ou une consigne précise du document AU]
+- Conseil 2 : [idem]
+- Conseil 3 : [idem]
+(3–4 conseils par profil, pas plus)
 
-Principes directeurs (CUA — Alvarez 2024) :
-- Représentation : varier la forme des informations transmises
-- Action/expression : varier les modalités de production
-- Engagement : réduire les obstacles à la participation
+Après le dernier profil, insère exactement ce bloc :
+---
+Ces conseils sont des suggestions — pas des prescriptions. Aucun élève ne correspond exactement à un profil : un élève dyslexique n'est pas l'autre, un élève TDAH non plus. L'enseignant connaît son élève et maîtrise sa pédagogie — c'est lui qui décide des ajustements pertinents. Pour ces élèves, le Pôle Territorial d'inclusion peut apporter un soutien complémentaire précieux.
+---
 
 ${antiClaudisation(niveauLabel, typeLabel)}`
   }
@@ -208,15 +211,14 @@ ${antiClaudisation(niveauLabel, typeLabel)}`
 function buildUserMessage(action, context) {
   if (action === 'adapter_activite') {
     const profils = (context.profils ?? []).join(', ') || 'non précisés'
-    return `Activité originale :
-"""
-${context.activite ?? 'Non fournie'}
-"""
-
+    const auSection = context.au_texte
+      ? `\nDocument de référence (Aménagements Universels) :\n"""\n${context.au_texte}\n"""\n`
+      : `\nActivité originale :\n"""\n${context.activite ?? 'Non fournie'}\n"""\n`
+    return `${auSection}
 Objectif d'apprentissage : ${context.objectif ?? 'Non précisé'}
 Profils présents dans la classe : ${profils}
 
-Génère une adaptation par profil mentionné. Commence directement par le premier profil.`
+Génère les conseils pédagogiques par profil avec des exemples tirés du document de référence. Commence directement par le premier profil.`
   }
 
   if (action === 'creer_sequence') {

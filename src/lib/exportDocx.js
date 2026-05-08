@@ -60,7 +60,7 @@ export async function exportAdaptationsDocx({
       children: [
         // Titre principal
         new Paragraph({
-          text: 'Adaptations pédagogiques différenciées',
+          text: 'Conseils pédagogiques différenciés',
           heading: HeadingLevel.TITLE,
           alignment: AlignmentType.LEFT,
           spacing: { after: 200 },
@@ -101,7 +101,7 @@ export async function exportAdaptationsDocx({
         spacer(),
 
         // Adaptations
-        sectionTitle('Adaptations par profil'),
+        sectionTitle('Conseils par profil'),
         ...parseAdaptations(texteFinal),
 
         spacer(),
