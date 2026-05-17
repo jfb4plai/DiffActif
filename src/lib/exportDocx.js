@@ -39,7 +39,7 @@ export async function exportAdaptationsDocx({
     styles: {
       default: {
         document: {
-          run: { font: 'Calibri', size: 22 },
+          run: { font: 'Arial', size: 24 },
         },
       },
     },
@@ -81,7 +81,7 @@ export async function exportAdaptationsDocx({
         // Activité originale
         sectionTitle('Activité originale'),
         new Paragraph({
-          children: [new TextRun({ text: activiteOriginale || '—', size: 22, italics: true })],
+          children: [new TextRun({ text: activiteOriginale || '—', italics: true })],
           spacing: { after: 160 },
           shading: { type: ShadingType.CLEAR, fill: GRAY_LIGHT },
           indent: { left: 360 },
@@ -91,8 +91,8 @@ export async function exportAdaptationsDocx({
         ...(objectif ? [
           new Paragraph({
             children: [
-              new TextRun({ text: 'Objectif : ', bold: true, size: 22 }),
-              new TextRun({ text: objectif, size: 22 }),
+              new TextRun({ text: 'Objectif : ', bold: true }),
+              new TextRun({ text: objectif }),
             ],
             spacing: { after: 320 },
           }),
@@ -149,7 +149,7 @@ export async function exportSequenceDocx({
 
   const doc = new Document({
     styles: {
-      default: { document: { run: { font: 'Calibri', size: 22 } } },
+      default: { document: { run: { font: 'Arial', size: 24 } } },
     },
     sections: [{
       headers: {
@@ -186,7 +186,7 @@ export async function exportSequenceDocx({
 
         sectionTitle('Objectif final'),
         new Paragraph({
-          children: [new TextRun({ text: objectif || '—', size: 22 })],
+          children: [new TextRun({ text: objectif || '—' })],
           spacing: { after: 320 },
         }),
 
@@ -266,9 +266,16 @@ async function fetchPictoMap(text) {
   const matches = [...text.matchAll(/\[picto:\s*([^\]]+)\]/gi)]
   if (matches.length === 0) return {}
   const entries = await Promise.all(
-    matches.map(async ([, mot]) => {
+    matches.map(async ([fullMatch, mot]) => {
       const keyword = mot.trim().toLowerCase()
-      const found = await searchArasaac(keyword)
+      // Extraire les mots environnants pour affiner la sélection contextuelle (RISS tel-05223298)
+      const pos = text.indexOf(fullMatch)
+      const surrounding = text.slice(Math.max(0, pos - 120), pos + fullMatch.length + 120)
+      const contextWords = surrounding
+        .toLowerCase()
+        .split(/[\s,.!?;:()\[\]"«»\n]+/)
+        .filter(w => w.length >= 3 && w !== keyword)
+      const found = await searchArasaac(keyword, contextWords)
       if (!found) return [keyword, null]
       const base64 = await pictoToBase64(found.url)
       return [keyword, base64]
@@ -296,7 +303,7 @@ export async function exportUniverselDocx({ auTexte, matiere, niveau, typeEnseig
   const auParagraphs = parseAuText(auTexte, mergedPictoMap, withVerbPictos)
 
   const doc = new Document({
-    styles: { default: { document: { run: { font: 'Arial', size: 22 } } } },
+    styles: { default: { document: { run: { font: 'Arial', size: 24 } } } },
     sections: [{
       properties: {
         page: {
@@ -372,6 +379,7 @@ export async function exportProfilDocx({
   pictos = [],    // [{ keyword, base64 }] — Arasaac
   matiere, niveau, typeEnseignement,
   withVerbPictos = false,
+  arMode = false, // AR activé (DYS confirmé) → corps 14pt (RISS : dumas-02535815, dumas-04347239)
 }) {
   const profilDef = PROFILS.find(p => p.value === profil)
   const profilLabel = profilDef?.label ?? profil
@@ -449,8 +457,10 @@ export async function exportProfilDocx({
     }),
   ]
 
+  const bodySize = arMode ? 28 : 24  // 14pt pour AR DYS (RISS dumas-02535815, dumas-04347239) ; 12pt sinon
+
   const doc = new Document({
-    styles: { default: { document: { run: { font: 'Arial', size: 22 } } } },
+    styles: { default: { document: { run: { font: 'Arial', size: bodySize } } } },
     sections: [{
       properties: {
         page: {
@@ -547,7 +557,7 @@ function buildPictoAnswerTable(mots, answerItems, pictoMap) {
         children: Array.from({ length: n }, (_, idx) => new TableCell({
           borders: noBorders(),
           children: [new Paragraph({
-            children: [new TextRun({ text: answerItems[idx]?.trim() ?? '', size: 22 })],
+            children: [new TextRun({ text: answerItems[idx]?.trim() ?? '' })],
             alignment: AlignmentType.CENTER,
             spacing: { after: 100 },
           })],
@@ -623,9 +633,9 @@ function renderInline(segment, pictoMap = {}) {
       return [new TextRun({ text: `[${mot ?? '?'}]`, italics: true, color: GRAY_TEXT, size: 20 })]
     }
     if (tok.startsWith('**') && tok.endsWith('**')) {
-      return [new TextRun({ text: tok.slice(2, -2), bold: true, size: 22 })]
+      return [new TextRun({ text: tok.slice(2, -2), bold: true })]
     }
-    return tok ? [new TextRun({ text: tok, size: 22 })] : []
+    return tok ? [new TextRun({ text: tok })] : []
   })
 }
 
@@ -760,7 +770,7 @@ function parseAdaptations(text) {
       }))
     } else {
       paragraphs.push(new Paragraph({
-        children: [new TextRun({ text: trimmed, size: 22 })],
+        children: [new TextRun({ text: trimmed })],
         spacing: { after: 80 },
         indent: { left: 360 },
         keepLines: true,
@@ -799,7 +809,7 @@ function parseSequence(text) {
       }))
     } else if (trimmed.startsWith('-') || trimmed.startsWith('•')) {
       paragraphs.push(new Paragraph({
-        children: [new TextRun({ text: trimmed, size: 22 })],
+        children: [new TextRun({ text: trimmed })],
         spacing: { after: 60 },
         indent: { left: 360 },
         keepLines: true,
@@ -807,7 +817,7 @@ function parseSequence(text) {
       }))
     } else {
       paragraphs.push(new Paragraph({
-        children: [new TextRun({ text: trimmed, size: 22 })],
+        children: [new TextRun({ text: trimmed })],
         spacing: { after: 80 },
         keepLines: true,
         keepNext: !endOfBlock,

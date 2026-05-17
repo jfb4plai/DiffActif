@@ -9,8 +9,10 @@ import PDFWorker from 'pdfjs-dist/build/pdf.worker.min.mjs?url'
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = PDFWorker
 
+const MAX_PAGES = 6
+
 // Rend les pages PDF en images JPEG base64 pour Claude Vision
-async function renderPagesToBase64(pdf, maxPages = 6) {
+async function renderPagesToBase64(pdf, maxPages = MAX_PAGES) {
   const count = Math.min(pdf.numPages, maxPages)
   const images = []
   for (let i = 1; i <= count; i++) {
@@ -26,13 +28,19 @@ async function renderPagesToBase64(pdf, maxPages = 6) {
   return images
 }
 
-// Retourne { text, hasDoutes, nbDoutes }
+// Retourne { text, hasDoutes, nbDoutes, pageWarning? }
+// pageWarning = { total, extracted } si le PDF dépasse MAX_PAGES pages
 export async function extractFile(file) {
   const ext = file.name.split('.').pop().toLowerCase()
 
   if (ext === 'pdf') {
     const arrayBuffer = await file.arrayBuffer()
     const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise
+
+    const totalPages = pdf.numPages
+    const pageWarning = totalPages > MAX_PAGES
+      ? { total: totalPages, extracted: MAX_PAGES }
+      : null
 
     // Toujours passer par Claude Vision pour la meilleure qualité
     const images = await renderPagesToBase64(pdf)
@@ -43,7 +51,7 @@ export async function extractFile(file) {
     })
     const data = await res.json()
     if (!res.ok) throw new Error(data.error ?? 'Erreur OCR')
-    return { text: data.text, hasDoutes: data.hasDoutes, nbDoutes: data.nbDoutes ?? 0 }
+    return { text: data.text, hasDoutes: data.hasDoutes, nbDoutes: data.nbDoutes ?? 0, pageWarning }
   }
 
   if (ext === 'docx') {

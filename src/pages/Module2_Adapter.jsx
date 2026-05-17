@@ -123,6 +123,16 @@ export default function Module2_Adapter() {
   // Validation AU
   const [auValidation, setAuValidation] = useState(null)
 
+  // Page warning (PDF > 6 pages)
+  const [pageWarning, setPageWarning] = useState(null) // { total, extracted } ou null
+
+  // AR mode — DYS confirmé, police 14pt (RISS dumas-02535815, dumas-04347239)
+  const [arMode, setArMode] = useState(false)
+
+  // Vérification solvabilité exercice (RISS hal-05450529)
+  const [verifying, setVerifying] = useState('')   // profil en cours
+  const [verificationResults, setVerificationResults] = useState({}) // { profil: text }
+
   // Export
   const [exporting, setExporting]   = useState(false)
   const [exportingProfil, setExportingProfil] = useState('') // profil en cours d'export
@@ -148,14 +158,16 @@ export default function Module2_Adapter() {
     setSaved(false)
     setHasDoutes(false)
     setNbDoutes(0)
+    setPageWarning(null)
     setAuTexte('')
     setProfilSections({})
 
     try {
-      const { text, hasDoutes: hd, nbDoutes: nb } = await extractFile(file)
+      const { text, hasDoutes: hd, nbDoutes: nb, pageWarning: pw } = await extractFile(file)
       setActivite(text)
       setHasDoutes(hd)
       setNbDoutes(nb)
+      setPageWarning(pw ?? null)
     } catch (err) {
       setImportError(err.message)
       setImportedFile('')
@@ -279,8 +291,36 @@ export default function Module2_Adapter() {
       try { pictos = await fetchPictosForText(activite, 5) } catch { /* optionnel */ }
     }
 
-    await exportProfilDocx({ profil, arTexte, auTexte: auTexte || activite, pictos, matiere, niveau, typeEnseignement: typeEns, withVerbPictos })
+    await exportProfilDocx({ profil, arTexte, auTexte: auTexte || activite, pictos, matiere, niveau, typeEnseignement: typeEns, withVerbPictos, arMode })
     setExportingProfil('')
+  }
+
+  async function verifierExercice(profil) {
+    if (!auTexte) return
+    setVerifying(profil)
+    try {
+      const profilLabel = PROFILS.find(p => p.value === profil)?.label ?? profil
+      const res = await fetch('/api/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'verifier_exercice',
+          context: {
+            profil: profilLabel,
+            exercice_adapte: auTexte,
+            niveau,
+            type_enseignement: typeEns,
+            matiere,
+          },
+        }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error ?? 'Erreur serveur')
+      setVerificationResults(prev => ({ ...prev, [profil]: data.text }))
+    } catch (err) {
+      setError(err.message)
+    }
+    setVerifying('')
   }
 
   async function sauvegarder() {
@@ -388,6 +428,15 @@ export default function Module2_Adapter() {
                 <p className="text-xs text-amber-800">
                   <strong>{nbDoutes} passage{nbDoutes > 1 ? 's' : ''} incertain{nbDoutes > 1 ? 's' : ''}</strong> — signalés{' '}
                   <code className="bg-amber-100 px-1 rounded">[? ... ?]</code> dans le texte. Corrigez avant de générer.
+                </p>
+              </div>
+            )}
+            {pageWarning && (
+              <div className="mt-2 flex items-start gap-2 rounded-lg bg-orange-50 border border-orange-200 px-3 py-2">
+                <span className="text-orange-500 text-sm mt-0.5">⚠</span>
+                <p className="text-xs text-orange-800">
+                  <strong>PDF de {pageWarning.total} pages</strong> — seules les {pageWarning.extracted} premières pages ont été analysées.
+                  Importez le reste du document en un second passage.
                 </p>
               </div>
             )}
@@ -523,6 +572,24 @@ export default function Module2_Adapter() {
             </button>
           ))}
         </div>
+        {profilsChoisis.some(p => ['dyslexie', 'dyspraxie', 'dyscalculie'].includes(p)) && (
+          <label className="flex items-start gap-2 cursor-pointer mt-4 p-3 bg-blue-50 rounded-xl border border-blue-200 select-none">
+            <input
+              type="checkbox"
+              checked={arMode}
+              onChange={e => setArMode(e.target.checked)}
+              className="w-4 h-4 mt-0.5 accent-brand-500"
+            />
+            <div>
+              <span className="text-xs font-medium text-blue-800">
+                Aménagement Raisonnable actif (AR) — police 14pt à l'export profil
+              </span>
+              <p className="text-xs text-blue-600 mt-0.5">
+                Pour élève DYS confirmé avec AR officiel (RISS : dumas-02535815 · dumas-04347239)
+              </p>
+            </div>
+          </label>
+        )}
       </div>
 
       {/* Bouton générer adaptations */}
@@ -571,6 +638,59 @@ export default function Module2_Adapter() {
               onChange={e => { setTexteFinal(e.target.value); setSaved(false) }}
             />
           </div>
+
+          {/* Versions par profil — export + vérification solvabilité */}
+          {auTexte && Object.keys(profilSections).length > 0 && (
+            <div className="mt-4 pt-4 border-t border-gray-100 space-y-3">
+              <p className="text-xs font-semibold text-gray-700">Versions par profil (AU + AR)</p>
+              {profilsChoisis.map(profil => {
+                const profilDef = PROFILS.find(p => p.value === profil)
+                const vr = verificationResults[profil]
+                const isVerif = verifying === profil
+                const isExport = exportingProfil === profil
+                const showAr = arMode && ['dyslexie', 'dyspraxie', 'dyscalculie'].includes(profil)
+                return (
+                  <div key={profil} className="rounded-xl border border-gray-200 overflow-hidden">
+                    <div className="flex items-center justify-between gap-3 px-3 py-2 bg-gray-50">
+                      <div className="flex items-center gap-2">
+                        <span>{profilDef?.icon}</span>
+                        <span className="text-sm font-medium text-gray-800">{profilDef?.label}</span>
+                        {showAr && (
+                          <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">AR 14pt</span>
+                        )}
+                      </div>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => verifierExercice(profil)}
+                          disabled={isVerif || !!vr}
+                          className="btn-secondary text-xs py-1.5 px-3"
+                        >
+                          {isVerif ? 'Vérif...' : vr ? 'Vérifié ✓' : 'Vérifier'}
+                        </button>
+                        <button
+                          onClick={() => exporterProfilDocx(profil)}
+                          disabled={isExport}
+                          className="btn-primary text-xs py-1.5 px-3"
+                        >
+                          {isExport ? 'Export...' : '⬇ Exporter'}
+                        </button>
+                      </div>
+                    </div>
+                    {vr && (
+                      <div className={`px-3 py-2 text-xs whitespace-pre-wrap border-t ${
+                        /non solvable|partiellement/i.test(vr)
+                          ? 'bg-amber-50 text-amber-800 border-amber-200'
+                          : 'bg-green-50 text-green-800 border-green-200'
+                      }`}>
+                        {vr}
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
+              <p className="text-xs text-gray-400">Vérification : Fliti & Avarello (2025) hal-05450529 · AR 14pt : Nonnenmacher (2018) dumas-02535815</p>
+            </div>
+          )}
 
           <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-100">
             <p className="text-xs text-gray-400">

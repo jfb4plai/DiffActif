@@ -28,10 +28,41 @@ export function extractKeywords(text, n = 6) {
 }
 
 /**
- * Cherche un pictogramme Arasaac pour un mot-clé.
- * Retourne { id, url } ou null.
+ * Sélectionne le meilleur résultat Arasaac parmi les 3 premiers.
+ * Priorité : correspondance exacte du mot-clé, puis chevauchement lexical avec le contexte.
  */
-export async function searchArasaac(keyword) {
+function selectBestResult(results, keyword, contextWords = []) {
+  const candidates = results.slice(0, 3)
+  const kw = keyword.toLowerCase()
+
+  // Priorité 1 : correspondance exacte dans les mots-clés du picto
+  for (const r of candidates) {
+    const tags = (r.keywords ?? []).map(k => (k.keyword ?? '').toLowerCase())
+    if (tags.includes(kw)) return r
+  }
+
+  // Priorité 2 : score de chevauchement avec les mots du contexte
+  if (contextWords.length > 0) {
+    const ctx = new Set(contextWords.map(w => w.toLowerCase()))
+    let bestScore = -1
+    let best = candidates[0]
+    for (const r of candidates) {
+      const tags = (r.keywords ?? []).map(k => (k.keyword ?? '').toLowerCase())
+      const score = tags.filter(t => ctx.has(t)).length
+      if (score > bestScore) { bestScore = score; best = r }
+    }
+    return best
+  }
+
+  return candidates[0]
+}
+
+/**
+ * Cherche un pictogramme Arasaac pour un mot-clé.
+ * contextWords : mots environnants pour affiner la sélection parmi les 3 premiers résultats.
+ * Retourne { id, keyword, url } ou null.
+ */
+export async function searchArasaac(keyword, contextWords = []) {
   try {
     const res = await fetch(
       `https://api.arasaac.org/v1/pictograms/fr/search/${encodeURIComponent(keyword)}`
@@ -39,7 +70,8 @@ export async function searchArasaac(keyword) {
     if (!res.ok) return null
     const results = await res.json()
     if (!results?.length) return null
-    const id = results[0]._id
+    const best = selectBestResult(results, keyword, contextWords)
+    const id = best._id
     return {
       id,
       keyword,

@@ -36,7 +36,7 @@ export default async function handler(req, res) {
       },
       body: JSON.stringify({
         model: 'claude-haiku-4-5-20251001',
-        max_tokens: action === 'appliquer_au' ? 2500 : action === 'adapter_activite' ? 2000 : 1200,
+        max_tokens: action === 'appliquer_au' ? 2500 : action === 'adapter_activite' ? 2000 : action === 'verifier_exercice' ? 800 : 1200,
         system: systemPrompt,
         messages: [{ role: 'user', content: userMessage }],
       }),
@@ -173,6 +173,28 @@ Tu reformules une adaptation existante pour la rendre plus concrète et praticab
 ${antiClaudisation(niveauLabel, typeLabel)}`
   }
 
+  if (action === 'verifier_exercice') {
+    return `${base}
+
+Tu simules un élève du profil indiqué et tu tentes de résoudre l'exercice adapté tel qu'il est présenté.
+Objectif : vérifier que l'exercice reste solvable pour ce profil, sans aide extérieure.
+
+Format de réponse :
+VERDICT : [Solvable / Partiellement solvable / Non solvable]
+RAISON : [1–2 phrases expliquant pourquoi — ancré dans le profil, pas de généralités]
+SUGGESTION : [Si non ou partiellement solvable : 1 ajustement concret et minimal]
+
+Règles :
+- Le verdict porte uniquement sur l'exercice adapté fourni, pas sur l'original.
+- Ne reformule pas la consigne. Ne récris pas l'exercice.
+- Si solvable, SUGGESTION est absent.
+- Limite : 5 lignes maximum au total.
+
+Source RISS : Fliti & Avarello (2025) hal-05450529
+
+${antiClaudisation(niveauLabel, typeLabel)}`
+  }
+
   if (action === 'appliquer_au') {
     return `${base}
 
@@ -262,6 +284,16 @@ Profil ciblé : ${context.profil ?? 'Non précisé'}
 Ce qui pose problème : ${context.raison ?? 'Trop vague ou peu praticable'}
 
 Donne directement la version améliorée.`
+  }
+
+  if (action === 'verifier_exercice') {
+    return `Profil de l'élève simulé : ${context.profil ?? 'Non précisé'}
+Exercice adapté à vérifier :
+"""
+${context.exercice_adapte ?? 'Non fourni'}
+"""
+
+Simule la résolution de cet exercice depuis ce profil et donne ton verdict.`
   }
 
   if (action === 'appliquer_au') {
