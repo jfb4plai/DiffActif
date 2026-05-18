@@ -44,6 +44,9 @@ export default async function handler(req, res) {
 
     if (!response.ok) {
       const err = await response.json()
+      if (response.status === 529 || err.error?.type === 'overloaded_error') {
+        return res.status(503).json({ error: 'API surchargée — réessayez dans quelques secondes.' })
+      }
       return res.status(500).json({ error: err.error?.message ?? 'Erreur API Anthropic' })
     }
 
