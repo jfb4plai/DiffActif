@@ -534,7 +534,7 @@ function buildPictoAnswerTable(mots, answerItems, pictoMap) {
     width: { size: 100, type: WidthType.PERCENTAGE },
     borders: noBorders(),
     rows: [
-      // Ligne 1 : pictogrammes
+      // Ligne 1 : pictogrammes — line spacing fixé à 1.0 exact pour isoler la table du 1.5x du corps
       new TableRow({
         cantSplit: true,
         children: mots.map(mot => new TableCell({
@@ -547,11 +547,11 @@ function buildPictoAnswerTable(mots, answerItems, pictoMap) {
                 : [new TextRun({ text: `[${mot}]`, italics: true, color: GRAY_TEXT, size: 18 })]
             })(),
             alignment: AlignmentType.CENTER,
-            spacing: { after: 60 },
+            spacing: { after: 60, line: 240, lineRule: 'exact' },
           })],
         })),
       }),
-      // Ligne 2 : zones de réponse correspondantes
+      // Ligne 2 : zones de réponse correspondantes — idem, pas de 1.5x
       new TableRow({
         cantSplit: true,
         children: Array.from({ length: n }, (_, idx) => new TableCell({
@@ -559,7 +559,7 @@ function buildPictoAnswerTable(mots, answerItems, pictoMap) {
           children: [new Paragraph({
             children: [new TextRun({ text: answerItems[idx]?.trim() ?? '' })],
             alignment: AlignmentType.CENTER,
-            spacing: { after: 100 },
+            spacing: { after: 100, line: 240, lineRule: 'exact' },
           })],
         })),
       }),
@@ -737,7 +737,7 @@ function parseAuText(text, pictoMap = {}, withVerbPictos = false, consigneQrMap 
       lastWasTitle = false
       paragraphs.push(new Paragraph({
         children: renderInline(trimmed, pictoMap),
-        spacing: { after: 100 },
+        spacing: { after: 100, line: 360, lineRule: 'auto' }, // 1.5x — standard AU accessibilité FWB
         keepLines: true,
         keepNext: !endOfBlock,
       }))

@@ -207,7 +207,7 @@ Les AU améliorent l'accessibilité pour TOUS les élèves sans stigmatiser pers
 AMÉNAGEMENTS UNIVERSELS À APPLIQUER :
 1. Consignes courtes — max 15 mots par phrase, une idée par phrase
 2. Verbe d'action en début de consigne, entre ** : **Lis**, **Complète**, **Entoure**
-3. Numéroter chaque exercice de façon continue (Exercice 1, Exercice 2…)
+3. Conserver la numérotation originale des exercices du document — ne pas renuméroter (si l'original a Exercice 4, garder Exercice 4)
 4. Structurer avec des titres clairs si le document en a
 5. Remplacer les mots rares par leur équivalent courant si possible
 6. Conserver TOUT le contenu original : exercices, listes de mots, phrases, choix
