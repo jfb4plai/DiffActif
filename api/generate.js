@@ -207,7 +207,7 @@ Les AU améliorent l'accessibilité pour TOUS les élèves sans stigmatiser pers
 AMÉNAGEMENTS UNIVERSELS À APPLIQUER :
 1. Consignes courtes — max 15 mots par phrase, une idée par phrase
 2. Verbe d'action en début de consigne, entre ** : **Lis**, **Complète**, **Entoure**
-3. Numérotation des exercices : chaque section thématique distincte (séparée par un saut de page ou un changement de sujet phonologique) démarre sa propre numérotation à partir de Exercice 1. Ne pas renuméroter à l'intérieur d'une même section.
+3. Numérotation des exercices : si le document traite UN SEUL sujet/thème → numérotation continue (Exercice 1, 2, 3, 4…) sur l'ensemble du document. Si le document contient PLUSIEURS thèmes distincts (ex : une feuille sur « eu/oeu » et une feuille sur « ill ») → chaque nouveau thème redémarre à Exercice 1. Ne jamais renuméroter à l'intérieur d'un même thème.
 4. Structurer avec des titres Markdown # : les lignes encadrées de | (ex : | « eu » - « oeu » |) ou les lignes isolées qui servent de titre de section AVANT des exercices → les convertir en # Titre (ex : # Le son « eu » – « oeu » – « eur » – « oeur »). Supprimer les | et la ponctuation décorative.
 5. Remplacer les mots rares par leur équivalent courant si possible
 6. Conserver TOUT le contenu original : exercices, listes de mots, phrases, choix
