@@ -78,7 +78,7 @@ export default function Module5_Progression() {
   async function loadStatsAdaptations() {
     const { data } = await supabase
       .from('adaptations')
-      .select('profils, matiere, created_at')
+      .select('profils, matiere, created_at, feedback')
       .order('created_at', { ascending: false })
       .limit(200)
     if (!data?.length) return
@@ -89,7 +89,9 @@ export default function Module5_Progression() {
     const topProfil = Object.entries(profilCount).sort((a, b) => b[1] - a[1])[0]?.[0] ?? null
     const matieres = [...new Set(data.map(d => d.matiere).filter(Boolean))]
     const derniereDate = data[0]?.created_at ? new Date(data[0].created_at).toLocaleDateString('fr-BE', { day: 'numeric', month: 'long' }) : null
-    setStatsAdapt({ total, topProfil, nbMatieres: matieres.length, derniereDate })
+    const nbPositifs = data.filter(d => d.feedback === 'positif').length
+    const nbFeedbacks = data.filter(d => d.feedback).length
+    setStatsAdapt({ total, topProfil, nbMatieres: matieres.length, derniereDate, nbPositifs, nbFeedbacks })
   }
 
   async function loadHistorique() {
@@ -164,6 +166,14 @@ export default function Module5_Progression() {
               <div className="bg-white rounded-xl p-3 border border-gray-200 text-center">
                 <div className="text-sm font-bold text-brand-600">{statsAdapt.derniereDate}</div>
                 <div className="text-xs text-gray-500 mt-0.5">dernière adaptation</div>
+              </div>
+            )}
+            {statsAdapt.nbFeedbacks > 0 && (
+              <div className="bg-white rounded-xl p-3 border border-gray-200 text-center">
+                <div className="text-sm font-bold text-brand-600">
+                  {statsAdapt.nbPositifs}/{statsAdapt.nbFeedbacks} 👍
+                </div>
+                <div className="text-xs text-gray-500 mt-0.5">feedbacks positifs</div>
               </div>
             )}
           </div>

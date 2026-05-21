@@ -121,6 +121,8 @@ export default function Module2_Adapter() {
   const [texteFinal, setTexteFinal] = useState('')
   const [saved, setSaved]           = useState(false)
   const [saving, setSaving]         = useState(false)
+  const [savedId, setSavedId]       = useState(null)
+  const [feedback, setFeedback]     = useState(null) // 'positif' | 'negatif' | null
 
   // Validation AU
   const [auValidation, setAuValidation] = useState(null)
@@ -347,7 +349,7 @@ export default function Module2_Adapter() {
 
   async function sauvegarder() {
     setSaving(true)
-    await supabase.from('adaptations').insert({
+    const { data } = await supabase.from('adaptations').insert({
       user_id:           user.id,
       activite_originale: activite,
       objectif,
@@ -357,9 +359,17 @@ export default function Module2_Adapter() {
       matiere,
       niveau,
       type_enseignement: typeEns,
-    })
+    }).select('id').single()
+    if (data?.id) setSavedId(data.id)
+    setFeedback(null)
     setSaved(true)
     setSaving(false)
+  }
+
+  async function envoyerFeedback(valeur) {
+    if (!savedId) return
+    setFeedback(valeur)
+    await supabase.from('adaptations').update({ feedback: valeur }).eq('id', savedId)
   }
 
   const canGenerate = activite.trim().length > 20 && profilsChoisis.length > 0
@@ -752,6 +762,18 @@ export default function Module2_Adapter() {
               </button>
             </div>
           </div>
+          {saved && !feedback && (
+            <div className="flex items-center gap-3 pt-3 border-t border-gray-100">
+              <span className="text-xs text-gray-500">Ça a fonctionné en classe ?</span>
+              <button onClick={() => envoyerFeedback('positif')} className="text-xl hover:scale-110 transition-transform" title="Oui">👍</button>
+              <button onClick={() => envoyerFeedback('negatif')} className="text-xl hover:scale-110 transition-transform" title="Non">👎</button>
+            </div>
+          )}
+          {feedback && (
+            <p className="text-xs text-gray-400 pt-3 border-t border-gray-100">
+              Feedback enregistré {feedback === 'positif' ? '👍' : '👎'} — merci
+            </p>
+          )}
         </div>
         </div>
       )}
