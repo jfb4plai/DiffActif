@@ -329,16 +329,6 @@ export async function exportUniverselDocx({ auTexte, matiere, niveau, typeEnseig
           run: { color: BRAND_TEAL, bold: true, size: 36 },
         }),
 
-        ...metaTable([
-          ['Matière',  matiere  || '—'],
-          ['Niveau',   niveauL  || '—'],
-          ['Type',     typeL    || '—'],
-          ['Date',     date],
-          ['Version',  'Aménagements Universels — toute la classe'],
-        ]),
-
-        spacer(),
-
         sectionTitle('Document avec aménagements universels'),
         ...auParagraphs,
 
