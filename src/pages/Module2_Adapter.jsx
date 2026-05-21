@@ -1,4 +1,5 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../contexts/AuthContext'
 import { PROFILS, NIVEAUX, TYPES_ENSEIGNEMENT } from '../lib/constants'
@@ -86,6 +87,7 @@ function validateAuRules(text) {
 
 export default function Module2_Adapter() {
   const { user, profile } = useAuth()
+  const navigate = useNavigate()
 
   // Formulaire
   const [activite, setActivite]   = useState('')
@@ -133,6 +135,26 @@ export default function Module2_Adapter() {
   const [verifying, setVerifying] = useState('')   // profil en cours
   const [verificationResults, setVerificationResults] = useState({}) // { profil: text }
 
+  // Historique adaptations (mémoire style enseignant — F3)
+  const [histoAdaptations, setHistoAdaptations] = useState([])
+
+  useEffect(() => {
+    if (!user) return
+    supabase
+      .from('adaptations')
+      .select('texte_final')
+      .eq('user_id', user.id)
+      .not('texte_final', 'is', null)
+      .neq('texte_final', '')
+      .order('created_at', { ascending: false })
+      .limit(3)
+      .then(({ data }) => {
+        if (data?.length) {
+          setHistoAdaptations(data.map(d => d.texte_final.slice(0, 250)))
+        }
+      })
+  }, [user])
+
   // Export
   const [exporting, setExporting]   = useState(false)
   const [exportingProfil, setExportingProfil] = useState('') // profil en cours d'export
@@ -142,8 +164,8 @@ export default function Module2_Adapter() {
   async function handleFile(file) {
     if (!file) return
     const ext = file.name.split('.').pop().toLowerCase()
-    if (!['pdf', 'docx'].includes(ext)) {
-      setImportError('Format non supporté — utilisez PDF ou DOCX.')
+    if (!['pdf', 'docx', 'jpg', 'jpeg', 'png', 'webp'].includes(ext)) {
+      setImportError('Format non supporté — utilisez PDF, DOCX ou une image (JPG, PNG, WebP).')
       return
     }
     if (file.size > 10 * 1024 * 1024) {
@@ -247,7 +269,7 @@ export default function Module2_Adapter() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           action: 'adapter_activite',
-          context: { activite, objectif, profils: profilsChoisis, niveau, type_enseignement: typeEns, matiere, au_texte: auTexte || null },
+          context: { activite, objectif, profils: profilsChoisis, niveau, type_enseignement: typeEns, matiere, au_texte: auTexte || null, historique_enseignant: histoAdaptations.length ? histoAdaptations : undefined },
         }),
       })
       const data = await res.json()
@@ -384,7 +406,7 @@ export default function Module2_Adapter() {
 
           {/* Zone d'import fichier */}
           <div>
-            <label className="label">Importer un fichier (PDF ou DOCX)</label>
+            <label className="label">Importer un fichier (PDF, DOCX ou image)</label>
             <div
               onDragOver={e => { e.preventDefault(); setDragOver(true) }}
               onDragLeave={() => setDragOver(false)}
@@ -396,7 +418,7 @@ export default function Module2_Adapter() {
                   : 'border-gray-300 hover:border-brand-400 hover:bg-gray-50'
               }`}
             >
-              <input ref={fileInputRef} type="file" accept=".pdf,.docx" className="hidden" onChange={onFileInput} />
+              <input ref={fileInputRef} type="file" accept=".pdf,.docx,.jpg,.jpeg,.png,.webp" className="hidden" onChange={onFileInput} />
               {importing ? (
                 <p className="text-sm text-brand-600 font-medium">Extraction et analyse en cours...</p>
               ) : importedFile ? (
@@ -414,7 +436,7 @@ export default function Module2_Adapter() {
                   <p className="text-sm text-gray-600 font-medium">
                     Glisser-déposer un fichier ou <span className="text-brand-600 underline">parcourir</span>
                   </p>
-                  <p className="text-xs text-gray-400 mt-1">PDF · DOCX — max 10 Mo</p>
+                  <p className="text-xs text-gray-400 mt-1">PDF · DOCX · JPG · PNG · WebP — max 10 Mo</p>
                 </>
               )}
             </div>
@@ -701,7 +723,15 @@ export default function Module2_Adapter() {
             </div>
           )}
 
-          <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-100">
+          <div className="mt-4 pt-4 border-t border-gray-100 space-y-3">
+            <button
+              onClick={() => navigate('/sequence', { state: { activite: auTexte || activite, objectif, matiere, niveau, typeEns, profils: profilsChoisis } })}
+              className="btn-secondary text-sm w-full"
+            >
+              Créer une séquence CUA à partir de cette activité
+            </button>
+
+          <div className="flex items-center justify-between">
             <p className="text-xs text-gray-400">
               Fondé sur : Mahi Haddad & Beaud (2025) · Fournier (2024) — corpus RISS
             </p>
@@ -722,6 +752,7 @@ export default function Module2_Adapter() {
               </button>
             </div>
           </div>
+        </div>
         </div>
       )}
     </div>

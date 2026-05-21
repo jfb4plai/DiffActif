@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useLocation } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../contexts/AuthContext'
 import { PROFILS, NIVEAUX, TYPES_ENSEIGNEMENT, PRINCIPES_CUA } from '../lib/constants'
@@ -6,15 +7,18 @@ import { exportSequenceDocx } from '../lib/exportDocx'
 
 export default function Module3_Sequence() {
   const { user, profile } = useAuth()
+  const location = useLocation()
+  const fromModule2 = location.state ?? {}
 
   const [form, setForm] = useState({
-    titre:            '',
-    matiere:          profile?.matiere ?? '',
-    niveau:           profile?.niveau_enseignement ?? '',
-    type_enseignement: profile?.type_enseignement ?? '',
-    objectif:         '',
+    titre:            fromModule2.objectif ? `Séquence — ${fromModule2.objectif.slice(0, 50)}` : '',
+    matiere:          fromModule2.matiere ?? profile?.matiere ?? '',
+    niveau:           fromModule2.niveau ?? profile?.niveau_enseignement ?? '',
+    type_enseignement: fromModule2.typeEns ?? profile?.type_enseignement ?? '',
+    objectif:         fromModule2.objectif ?? '',
     nb_seances:       '4',
-    profils:          [],
+    profils:          fromModule2.profils ?? [],
+    activite_source:  fromModule2.activite ?? '',
   })
   const [generating, setGenerating] = useState(false)
   const [resultat, setResultat]     = useState('')
@@ -55,7 +59,7 @@ export default function Module3_Sequence() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           action: 'creer_sequence',
-          context: { ...form },
+          context: { titre: form.titre, matiere: form.matiere, niveau: form.niveau, type_enseignement: form.type_enseignement, objectif: form.objectif, nb_seances: form.nb_seances, profils: form.profils },
         }),
       })
       const data = await res.json()
@@ -111,6 +115,13 @@ export default function Module3_Sequence() {
           Structurez une séquence différenciée selon les 3 principes de la Conception Universelle de l'Apprentissage
         </p>
       </div>
+
+      {/* Bandeau contexte Module2 */}
+      {fromModule2.activite && (
+        <div className="rounded-xl bg-brand-50 border border-brand-200 px-4 py-3 text-xs text-brand-800">
+          Formulaire pré-rempli depuis l'activité adaptée — vérifiez et ajustez avant de générer.
+        </div>
+      )}
 
       {/* Rappel CUA */}
       <div className="grid grid-cols-3 gap-3">

@@ -126,7 +126,15 @@ Décrocheur : Fromaget (2020) dumas-02867520 · Mons et al. (2017) hal-04622700
 HPI : Masson (2024) dumas-05293977 · Cuadrado et al. (2023) hal-04108902
 Dyspraxie : Brenot (2025) dumas-05410646 · Azzimani (2023) dumas-04568020
 
-Après le dernier profil, insère exactement ce bloc :
+Si un historique d'adaptations précédentes est fourni dans le message utilisateur, observe le style, le vocabulaire et le niveau de détail de cet enseignant et adopte le même registre dans tes conseils. Ne le mentionne pas explicitement.
+
+Si 2 profils ou plus sont listés ET qu'une co-occurrence pédagogiquement pertinente existe entre certains d'entre eux (ex : TDAH + dyslexie, dyslexie + allophone), ajoute avant le bloc final une section courte :
+[CO-OCCURRENCE : Profil A + Profil B]
+- 1 stratégie transversale qui sert les deux simultanément
+- 1 point de vigilance si certaines adaptations sont contradictoires
+N'ajoute cette section que si la co-occurrence est réelle et fréquente en classe ordinaire. Si les profils sont indépendants, omets-la.
+
+Après le dernier profil (et l'éventuelle co-occurrence), insère exactement ce bloc :
 ---
 Ces conseils sont des suggestions — pas des prescriptions. Aucun élève ne correspond exactement à un profil : un élève dyslexique n'est pas l'autre, un élève TDAH non plus. L'enseignant connaît son élève et maîtrise sa pédagogie — c'est lui qui décide des ajustements pertinents. Pour ces élèves, le Pôle Territorial d'inclusion peut apporter un soutien complémentaire précieux.
 ---
@@ -262,7 +270,10 @@ function buildUserMessage(action, context) {
     const auSection = context.au_texte
       ? `\nDocument de référence (Aménagements Universels) :\n"""\n${context.au_texte}\n"""\n`
       : `\nActivité originale :\n"""\n${context.activite ?? 'Non fournie'}\n"""\n`
-    return `${auSection}
+    const histoSection = context.historique_enseignant?.length
+      ? `\nStyle de cet enseignant — exemples d'adaptations précédentes :\n${context.historique_enseignant.map((h, i) => `[${i + 1}] ${h}`).join('\n')}\n`
+      : ''
+    return `${auSection}${histoSection}
 Objectif d'apprentissage : ${context.objectif ?? 'Non précisé'}
 Profils présents dans la classe : ${profils}
 

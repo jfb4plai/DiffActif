@@ -4,6 +4,25 @@
  * Attribution obligatoire : © Arasaac (arasaac.org)
  */
 
+// ── Cache localStorage — TTL 7 jours ─────────────────────
+const CACHE_TTL = 7 * 24 * 60 * 60 * 1000
+
+function getCached(key) {
+  try {
+    const raw = localStorage.getItem(key)
+    if (!raw) return null
+    const { value, ts } = JSON.parse(raw)
+    if (Date.now() - ts > CACHE_TTL) { localStorage.removeItem(key); return null }
+    return value
+  } catch { return null }
+}
+
+function setCache(key, value) {
+  try {
+    localStorage.setItem(key, JSON.stringify({ value, ts: Date.now() }))
+  } catch { /* quota dépassé — ignorer */ }
+}
+
 // Mots-outils français à exclure de la recherche picto
 const STOP_WORDS = new Set([
   'le', 'la', 'les', 'un', 'une', 'des', 'de', 'du', 'et', 'est', 'en',
@@ -63,6 +82,10 @@ function selectBestResult(results, keyword, contextWords = []) {
  * Retourne { id, keyword, url } ou null.
  */
 export async function searchArasaac(keyword, contextWords = []) {
+  const cacheKey = `arasaac_s_${keyword}`
+  const cached = getCached(cacheKey)
+  if (cached !== null) return cached
+
   try {
     const res = await fetch(
       `https://api.arasaac.org/v1/pictograms/fr/search/${encodeURIComponent(keyword)}`
@@ -72,11 +95,13 @@ export async function searchArasaac(keyword, contextWords = []) {
     if (!results?.length) return null
     const best = selectBestResult(results, keyword, contextWords)
     const id = best._id
-    return {
+    const result = {
       id,
       keyword,
       url: `https://static.arasaac.org/pictograms/${id}/${id}_500.png`,
     }
+    setCache(cacheKey, result)
+    return result
   } catch {
     return null
   }
@@ -86,6 +111,10 @@ export async function searchArasaac(keyword, contextWords = []) {
  * Télécharge une image picto et retourne son contenu en base64 (sans préfixe data:)
  */
 export async function pictoToBase64(url) {
+  const cacheKey = `arasaac_b64_${url}`
+  const cached = getCached(cacheKey)
+  if (cached !== null) return cached
+
   try {
     const res = await fetch(url)
     if (!res.ok) return null
@@ -94,6 +123,7 @@ export async function pictoToBase64(url) {
       const reader = new FileReader()
       reader.onload = () => {
         const b64 = reader.result.split(',')[1]
+        setCache(cacheKey, b64)
         resolve(b64)
       }
       reader.onerror = () => resolve(null)

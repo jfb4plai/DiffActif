@@ -71,8 +71,26 @@ export default function Module5_Progression() {
   const [saving, setSaving]         = useState(false)
   const [saved, setSaved]           = useState(false)
   const [loading, setLoading]       = useState(true)
+  const [statsAdapt, setStatsAdapt] = useState(null)
 
-  useEffect(() => { loadHistorique() }, [])
+  useEffect(() => { loadHistorique(); loadStatsAdaptations() }, [])
+
+  async function loadStatsAdaptations() {
+    const { data } = await supabase
+      .from('adaptations')
+      .select('profils, matiere, created_at')
+      .order('created_at', { ascending: false })
+      .limit(200)
+    if (!data?.length) return
+
+    const total = data.length
+    const profilCount = {}
+    data.forEach(d => (d.profils ?? []).forEach(p => { profilCount[p] = (profilCount[p] ?? 0) + 1 }))
+    const topProfil = Object.entries(profilCount).sort((a, b) => b[1] - a[1])[0]?.[0] ?? null
+    const matieres = [...new Set(data.map(d => d.matiere).filter(Boolean))]
+    const derniereDate = data[0]?.created_at ? new Date(data[0].created_at).toLocaleDateString('fr-BE', { day: 'numeric', month: 'long' }) : null
+    setStatsAdapt({ total, topProfil, nbMatieres: matieres.length, derniereDate })
+  }
 
   async function loadHistorique() {
     const { data } = await supabase
@@ -120,6 +138,37 @@ export default function Module5_Progression() {
           Auto-évaluation de votre pratique de différenciation — à remplir librement, sans jugement
         </p>
       </div>
+
+      {/* Stats activité adaptations */}
+      {statsAdapt && (
+        <div className="card border-gray-200 bg-gray-50">
+          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Votre activité DiffActif</p>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <div className="bg-white rounded-xl p-3 border border-gray-200 text-center">
+              <div className="text-2xl font-bold text-brand-600">{statsAdapt.total}</div>
+              <div className="text-xs text-gray-500 mt-0.5">adaptation{statsAdapt.total > 1 ? 's' : ''} créée{statsAdapt.total > 1 ? 's' : ''}</div>
+            </div>
+            {statsAdapt.topProfil && (
+              <div className="bg-white rounded-xl p-3 border border-gray-200 text-center">
+                <div className="text-sm font-bold text-brand-600 capitalize">{statsAdapt.topProfil}</div>
+                <div className="text-xs text-gray-500 mt-0.5">profil le + adapté</div>
+              </div>
+            )}
+            {statsAdapt.nbMatieres > 0 && (
+              <div className="bg-white rounded-xl p-3 border border-gray-200 text-center">
+                <div className="text-2xl font-bold text-brand-600">{statsAdapt.nbMatieres}</div>
+                <div className="text-xs text-gray-500 mt-0.5">matière{statsAdapt.nbMatieres > 1 ? 's' : ''} différente{statsAdapt.nbMatieres > 1 ? 's' : ''}</div>
+              </div>
+            )}
+            {statsAdapt.derniereDate && (
+              <div className="bg-white rounded-xl p-3 border border-gray-200 text-center">
+                <div className="text-sm font-bold text-brand-600">{statsAdapt.derniereDate}</div>
+                <div className="text-xs text-gray-500 mt-0.5">dernière adaptation</div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Score global */}
       {rempli && (

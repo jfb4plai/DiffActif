@@ -1,4 +1,6 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { supabase } from '../lib/supabase'
+import { useAuth } from '../contexts/AuthContext'
 import { PROFILS, NIVEAUX } from '../lib/constants'
 
 // Exemples validés — ancrés dans les références RISS
@@ -110,14 +112,73 @@ Objectif évalué : la démarche de résolution, pas le résultat numérique seu
   },
 ]
 
+const FORM_VIDE = { titre: '', matiere: '', niveau: '', profils: [], principe_cua: '', description: '', adaptation: '', reference: '' }
+
 export default function Module4_Bibliotheque() {
+  const { user } = useAuth()
   const [filterProfil, setFilterProfil] = useState('')
   const [filterNiveau, setFilterNiveau] = useState('')
   const [filterCua, setFilterCua]       = useState('')
   const [search, setSearch]             = useState('')
   const [ouvert, setOuvert]             = useState(null)
 
-  const exemplesFiltres = EXEMPLES.filter(ex => {
+  // Contributions utilisateur
+  const [contributions, setContributions] = useState([])
+  const [showForm, setShowForm]           = useState(false)
+  const [form, setForm]                   = useState(FORM_VIDE)
+  const [saving, setSaving]               = useState(false)
+  const [saved, setSaved]                 = useState(false)
+
+  useEffect(() => { if (user) loadContributions() }, [user])
+
+  async function loadContributions() {
+    const { data } = await supabase
+      .from('exemples_bibliotheque')
+      .select('*')
+      .order('created_at', { ascending: false })
+    setContributions(data ?? [])
+  }
+
+  async function soumettre() {
+    if (!form.titre.trim() || !form.adaptation.trim()) return
+    setSaving(true)
+    await supabase.from('exemples_bibliotheque').insert({
+      user_id:     user.id,
+      titre:       form.titre,
+      matiere:     form.matiere,
+      niveau:      form.niveau,
+      profils:     form.profils,
+      principe_cua: form.principe_cua,
+      description: form.description,
+      adaptation:  form.adaptation,
+      reference:   form.reference,
+    })
+    await loadContributions()
+    setForm(FORM_VIDE)
+    setSaved(true)
+    setSaving(false)
+    setShowForm(false)
+    setTimeout(() => setSaved(false), 3000)
+  }
+
+  async function supprimer(id) {
+    await supabase.from('exemples_bibliotheque').delete().eq('id', id)
+    setContributions(prev => prev.filter(c => c.id !== id))
+  }
+
+  function toggleFormProfil(val) {
+    setForm(prev => ({
+      ...prev,
+      profils: prev.profils.includes(val) ? prev.profils.filter(p => p !== val) : [...prev.profils, val],
+    }))
+  }
+
+  const tousExemples = [
+    ...EXEMPLES,
+    ...contributions.map(c => ({ ...c, _contrib: true })),
+  ]
+
+  const exemplesFiltres = tousExemples.filter(ex => {
     if (filterProfil && !ex.profils.includes(filterProfil)) return false
     if (filterNiveau && ex.niveau !== filterNiveau) return false
     if (filterCua && ex.principe_cua !== filterCua) return false
@@ -142,6 +203,74 @@ export default function Module4_Bibliotheque() {
           Exemples d'adaptations validés par la recherche RISS — filtrables par profil, niveau, principe CUA
         </p>
       </div>
+
+      {/* Bouton contribuer */}
+      <div className="flex items-center justify-between">
+        <p className="text-sm text-gray-500">{exemplesFiltres.length} exemple{exemplesFiltres.length > 1 ? 's' : ''} — dont {contributions.length} de vous</p>
+        <button onClick={() => { setShowForm(f => !f); setSaved(false) }} className="btn-secondary text-sm">
+          {showForm ? 'Annuler' : '+ Ajouter un exemple'}
+        </button>
+      </div>
+
+      {/* Formulaire de contribution */}
+      {showForm && (
+        <div className="card border-brand-200 space-y-4">
+          <h2 className="font-semibold text-gray-800">Votre exemple</h2>
+          <div>
+            <label className="label">Titre <span className="text-red-400">*</span></label>
+            <input className="input" value={form.titre} onChange={e => setForm(f => ({ ...f, titre: e.target.value }))} placeholder="Ex : Lexique illustré en chimie" />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="label">Matière</label>
+              <input className="input" value={form.matiere} onChange={e => setForm(f => ({ ...f, matiere: e.target.value }))} placeholder="Français, Maths..." />
+            </div>
+            <div>
+              <label className="label">Niveau</label>
+              <select className="input" value={form.niveau} onChange={e => setForm(f => ({ ...f, niveau: e.target.value }))}>
+                <option value="">Choisir...</option>
+                {NIVEAUX.map(n => <option key={n.value} value={n.value}>{n.label}</option>)}
+              </select>
+            </div>
+          </div>
+          <div>
+            <label className="label">Profils concernés</label>
+            <div className="flex flex-wrap gap-2">
+              {PROFILS.map(p => (
+                <button key={p.value} onClick={() => toggleFormProfil(p.value)}
+                  className={`text-xs px-3 py-1.5 rounded-full border-2 transition-all ${form.profils.includes(p.value) ? 'border-brand-500 bg-brand-50 text-brand-700' : 'border-gray-200 text-gray-500'}`}>
+                  {p.icon} {p.label.split('/')[0]}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div>
+            <label className="label">Principe CUA</label>
+            <select className="input" value={form.principe_cua} onChange={e => setForm(f => ({ ...f, principe_cua: e.target.value }))}>
+              <option value="">Choisir...</option>
+              <option value="representation">Représentation</option>
+              <option value="action_expression">Action / expression</option>
+              <option value="engagement">Engagement</option>
+            </select>
+          </div>
+          <div>
+            <label className="label">Description courte</label>
+            <textarea className="input resize-none h-16" value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} placeholder="Contexte et bénéfice pour l'élève..." />
+          </div>
+          <div>
+            <label className="label">Adaptation concrète <span className="text-red-400">*</span></label>
+            <textarea className="input resize-none h-28" value={form.adaptation} onChange={e => setForm(f => ({ ...f, adaptation: e.target.value }))} placeholder="Décrivez l'adaptation mise en place, étape par étape..." />
+          </div>
+          <div>
+            <label className="label">Référence RISS (facultatif)</label>
+            <input className="input" value={form.reference} onChange={e => setForm(f => ({ ...f, reference: e.target.value }))} placeholder="Auteur (année) — identifiant RISS" />
+          </div>
+          {saved && <p className="text-xs text-green-600 font-medium">Exemple ajouté à votre bibliothèque ✓</p>}
+          <button onClick={soumettre} disabled={saving || !form.titre.trim() || !form.adaptation.trim()} className="btn-primary text-sm">
+            {saving ? 'Enregistrement...' : 'Ajouter à ma bibliothèque'}
+          </button>
+        </div>
+      )}
 
       {/* Filtres */}
       <div className="card space-y-3">
@@ -179,8 +308,6 @@ export default function Module4_Bibliotheque() {
       </div>
 
       {/* Résultats */}
-      <p className="text-sm text-gray-500">{exemplesFiltres.length} exemple{exemplesFiltres.length > 1 ? 's' : ''}</p>
-
       {exemplesFiltres.length === 0 ? (
         <div className="card text-center py-12">
           <div className="text-4xl mb-3">📚</div>
@@ -199,6 +326,7 @@ export default function Module4_Bibliotheque() {
                 >
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap mb-2">
+                      {ex._contrib && <span className="badge bg-brand-100 text-brand-800">Mon exemple</span>}
                       <span className={`badge ${cua.color}`}>{cua.icon} {cua.label}</span>
                       {ex.profils.map(val => {
                         const p = profilInfo(val)
@@ -221,9 +349,19 @@ export default function Module4_Bibliotheque() {
                     <div className="bg-brand-50 rounded-xl p-4 text-sm text-gray-700 whitespace-pre-wrap leading-relaxed border border-brand-100">
                       {ex.adaptation}
                     </div>
-                    <p className="text-xs text-gray-400 mt-3">
-                      Source RISS : {ex.reference}
-                    </p>
+                    {ex.reference && (
+                      <p className="text-xs text-gray-400 mt-3">
+                        {ex._contrib ? 'Référence : ' : 'Source RISS : '}{ex.reference}
+                      </p>
+                    )}
+                    {ex._contrib && (
+                      <button
+                        onClick={e => { e.stopPropagation(); supprimer(ex.id) }}
+                        className="mt-3 text-xs text-red-400 hover:text-red-600"
+                      >
+                        Supprimer cet exemple
+                      </button>
+                    )}
                   </div>
                 )}
               </div>
