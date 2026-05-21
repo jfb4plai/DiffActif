@@ -537,10 +537,19 @@ export default function Module2_Adapter() {
                   Picto Arasaac avant chaque verbe d'action (option)
                 </span>
               </label>
+              {auValidation?.some(r => r.id === 'sans_doutes' && !r.ok) && (
+                <div className="flex items-start gap-2 rounded-lg bg-red-50 border border-red-200 px-3 py-2">
+                  <span className="text-red-500 text-sm mt-0.5">✗</span>
+                  <p className="text-xs text-red-800">
+                    <strong>Export bloqué</strong> — des passages incertains <code className="bg-red-100 px-1 rounded">[? ?]</code> subsistent dans le texte AU.
+                    Corrigez-les manuellement dans la zone de texte avant d'exporter.
+                  </p>
+                </div>
+              )}
               <button
                 onClick={exporterAuDocx}
-                disabled={exporting}
-                className="btn-primary text-sm"
+                disabled={exporting || auValidation?.some(r => r.id === 'sans_doutes' && !r.ok)}
+                className="btn-primary text-sm disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 {exporting ? 'Export...' : '⬇ Exporter document AU universel (.docx)'}
               </button>

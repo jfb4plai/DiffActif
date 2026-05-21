@@ -208,7 +208,7 @@ AMÉNAGEMENTS UNIVERSELS À APPLIQUER :
 1. Consignes courtes — max 15 mots par phrase, une idée par phrase
 2. Verbe d'action en début de consigne, entre ** : **Lis**, **Complète**, **Entoure**
 3. Conserver la numérotation originale des exercices du document — ne pas renuméroter (si l'original a Exercice 4, garder Exercice 4)
-4. Structurer avec des titres clairs si le document en a
+4. Structurer avec des titres Markdown # : les lignes encadrées de | (ex : | « eu » - « oeu » |) ou les lignes isolées qui servent de titre de section AVANT des exercices → les convertir en # Titre (ex : # Le son « eu » – « oeu » – « eur » – « oeur »). Supprimer les | et la ponctuation décorative.
 5. Remplacer les mots rares par leur équivalent courant si possible
 6. Conserver TOUT le contenu original : exercices, listes de mots, phrases, choix
 
@@ -220,12 +220,22 @@ RÈGLE "MÊME PLAN" (non négociable) :
 
 PICTOGRAMMES ARASAAC — SUPPORT VISUEL (obligatoire si applicable) :
 Cas 1 — Dessin explicite : si l'exercice mentionne un dessin ou une image ([dessin], [image], ou décrit un objet), remplace-le par [picto: mot_représenté] sur sa propre ligne.
-Cas 2 — Exercice de complétion avec amorces : si l'exercice demande de compléter un mot à partir d'une amorce (ex : "une pas......", "une co......") ET que le contexte phonologique permet d'inférer le mot complet, ajoute [picto: mot_complet] sur une ligne dédiée AVANT la ligne des amorces.
-  Exemple : thème « -ille » + amorces "une pas...... | une co...... | une jon...... | la che......"
-  → ligne picto : [picto: pastille] | [picto: coquille] | [picto: jonquille] | [picto: chenille]
-  → ligne réponse : une pas...... | une co...... | une jon...... | la che......
+Cas 2 — Exercice de complétion avec amorces : si l'exercice demande de compléter un mot à partir d'une amorce (ex : "une pas......", "une co......") ET que le contexte phonologique permet d'inférer le mot complet, insère UNE SEULE ligne de pictos AVANT la ligne des amorces.
+  RÈGLE ABSOLUE : autant de pictos que d'amorces, dans le même ordre, séparés par " | " sur une seule ligne.
+  Exemple : thème « -ille » + 4 amorces "une pas...... | une co...... | une jon...... | la che......"
+  → ligne picto (UNE seule ligne) : [picto: pastille] | [picto: coquille] | [picto: jonquille] | [picto: chenille]
+  → ligne réponse (inchangée) : une pas...... | une co...... | une jon...... | la che......
+  INTERDIT : plusieurs lignes [picto:] séparées — toujours une seule ligne avec " | " entre chaque picto.
   Le picto représente le MOT COMPLET (pas la syllabe manquante). Le blanc à compléter reste présent.
 - Ne pas insérer de picto pour les éléments purement décoratifs sans lien avec la tâche de l'élève.
+
+PASSAGES INCERTAINS [? ?] :
+Si le texte source contient des marqueurs [?..?] (doutes OCR non résolus), tente de les résoudre avant d'appliquer les AU :
+- Applique l'accord grammatical du contexte immédiat (article, genre, nombre).
+  Ex : "un [?n?]eu" → article masculin "un" → "pneu" ✓ (et non "peur", féminin).
+- Utilise le champ phonologique du document (son traité dans le titre ou la consigne).
+- Si le mot est identifiable avec certitude ou forte probabilité → inscris le mot résolu sans marqueur.
+- Si vraiment insoluble → conserve [? texte douteux ?] tel quel dans le document AU.
 
 RÈGLES :
 - Retourne le document reformaté, rien d'autre

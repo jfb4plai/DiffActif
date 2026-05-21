@@ -503,11 +503,12 @@ function isEndOfBlock(lines, currentIndex) {
   return false
 }
 
-// Détecte un marqueur de saut de page explicite dans le texte
+// Détecte un marqueur de saut de page explicite dans le texte.
+// PAGE 1 est exclu : il apparaît en tête de document et ne doit pas créer de page blanche.
 function isPageBreakMarker(line) {
   return /^---\s*(page|saut|nouvelle\s*page|changement)/i.test(line.trim())
     || /^\[saut.de.page\]/i.test(line.trim())
-    || /^PAGE\s+\d+$/i.test(line.trim())
+    || /^PAGE\s+([2-9]|\d{2,})$/i.test(line.trim())
 }
 
 // Détecte une ligne purement décorative (points, tirets, underscores répétés ≥ 3)
