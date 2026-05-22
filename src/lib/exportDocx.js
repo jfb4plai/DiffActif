@@ -519,17 +519,27 @@ function noBorders() {
 }
 
 // Tableau picto (ligne 1) / zone de réponse (ligne 2) — une colonne par item
+// A4 avec marges left+right 850 DXA chacune → contenu = 11906 - 1700 = 10206 DXA
+const TABLE_CONTENT_WIDTH = 10206
 function buildPictoAnswerTable(mots, answerItems, pictoMap) {
   const n = mots.length
+  const colW = Math.floor(TABLE_CONTENT_WIDTH / n)
+  // Dernière colonne absorbe le reste pour que la somme soit exacte
+  const columnWidths = Array.from({ length: n }, (_, i) =>
+    i === n - 1 ? TABLE_CONTENT_WIDTH - colW * (n - 1) : colW
+  )
   return new Table({
-    width: { size: 100, type: WidthType.PERCENTAGE },
+    width: { size: TABLE_CONTENT_WIDTH, type: WidthType.DXA },
+    columnWidths,
     borders: noBorders(),
     rows: [
       // Ligne 1 : pictogrammes — line spacing fixé à 1.0 exact pour isoler la table du 1.5x du corps
       new TableRow({
         cantSplit: true,
-        children: mots.map(mot => new TableCell({
+        children: mots.map((mot, idx) => new TableCell({
           borders: noBorders(),
+          width: { size: columnWidths[idx], type: WidthType.DXA },
+          margins: { top: 40, bottom: 40, left: 60, right: 60 },
           children: [new Paragraph({
             children: (() => {
               const b64 = pictoMap[mot]
@@ -547,6 +557,8 @@ function buildPictoAnswerTable(mots, answerItems, pictoMap) {
         cantSplit: true,
         children: Array.from({ length: n }, (_, idx) => new TableCell({
           borders: noBorders(),
+          width: { size: columnWidths[idx], type: WidthType.DXA },
+          margins: { top: 40, bottom: 40, left: 60, right: 60 },
           children: [new Paragraph({
             children: [new TextRun({ text: answerItems[idx]?.trim() ?? '' })],
             alignment: AlignmentType.CENTER,
