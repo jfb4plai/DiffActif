@@ -534,8 +534,8 @@ function buildPictoAnswerTable(mots, answerItems, pictoMap) {
             children: (() => {
               const b64 = pictoMap[mot]
               return b64
-                ? [new ImageRun({ data: b64, transformation: { width: 80, height: 80 }, type: 'png' })]
-                : [new TextRun({ text: `[${mot}]`, italics: true, color: GRAY_TEXT, size: 18 })]
+                ? [new ImageRun({ data: b64, transformation: { width: 110, height: 110 }, type: 'png' })]
+                : [new TextRun({ text: `[${mot}]`, italics: true, color: '374151', size: 22 })]
             })(),
             alignment: AlignmentType.CENTER,
             spacing: { after: 60, line: 240, lineRule: 'exact' },
@@ -620,8 +620,8 @@ function renderInline(segment, pictoMap = {}) {
     if (/^\[picto:/i.test(tok)) {
       const mot = tok.match(/\[picto:\s*([^\]]+)\]/i)?.[1]?.trim().toLowerCase()
       const b64 = pictoMap[mot]
-      if (b64) return [new ImageRun({ data: b64, transformation: { width: 60, height: 60 }, type: 'png' })]
-      return [new TextRun({ text: `[${mot ?? '?'}]`, italics: true, color: GRAY_TEXT, size: 20 })]
+      if (b64) return [new ImageRun({ data: b64, transformation: { width: 80, height: 80 }, type: 'png' })]
+      return [new TextRun({ text: `[${mot ?? '?'}]`, italics: true, color: '374151', size: 22 })]
     }
     if (tok.startsWith('**') && tok.endsWith('**')) {
       return [new TextRun({ text: tok.slice(2, -2), bold: true })]
@@ -693,9 +693,9 @@ function parseAuText(text, pictoMap = {}, withVerbPictos = false, consigneQrMap 
           children: pictoMots.flatMap(mot => {
             const b64 = pictoMap[mot]
             return b64
-              ? [new ImageRun({ data: b64, transformation: { width: 60, height: 60 }, type: 'png' }),
+              ? [new ImageRun({ data: b64, transformation: { width: 80, height: 80 }, type: 'png' }),
                  new TextRun({ text: '  ' })]
-              : [new TextRun({ text: `[${mot}]  `, italics: true, color: GRAY_TEXT, size: 20 })]
+              : [new TextRun({ text: `[${mot}]  `, italics: true, color: '374151', size: 22 })]
           }),
           spacing: { after: 100 },
           keepNext: true,
