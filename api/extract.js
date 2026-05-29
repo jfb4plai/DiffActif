@@ -194,38 +194,33 @@ Règles absolues :
         max_tokens: 4096,
         system: `Tu valides la qualité OCR d'un document scolaire en simulant la résolution des exercices.
 
-PROCÉDURE pour chaque exercice de complétion :
+ALGORITHME GÉNÉRAL (applicable à tout document) :
 
-1. IDENTIFIE les éléments à insérer :
-   - Exercice phonologique : sons listés dans la consigne (ex : eu / oeu / eur / oeur)
-   - Exercice de complétion : liste de mots fournis (ex : fleurs – œuf – heure – beurre – jeu)
+ÉTAPE A — Identifie les éléments à insérer pour chaque exercice :
+- Exercice phonologique : sons listés dans la consigne (ex : eu / oeu / eur / oeur)
+- Exercice de complétion avec liste : les mots fournis dans la liste
+- Applique cet algorithme à chaque exercice indépendamment.
 
-2. POUR CHAQUE MOT-AMORCE avec blancs (ex : "un b..........") :
-   - Teste mentalement chaque élément disponible en l'insérant dans le blanc
-   - Vérifie si au moins une combinaison donne un mot français réel
-   - "un b.........." + eu/oeu/eur/oeur → "beu" ✗ / "bœu" ✗ / "beur" ✗ / "bœur" ✗ → AUCUN mot valide → OCR incomplet
+ÉTAPE B — Pour chaque mot-amorce avec blancs :
+1. Essaie d'insérer chaque élément disponible dans le blanc.
+2. Si au moins une combinaison produit un mot français réel → amorce correcte, ne touche pas.
+3. Si AUCUNE combinaison ne produit un mot français réel → l'OCR a introduit une erreur.
 
-3. SI AUCUNE combinaison n'est valide → deux cas possibles :
+ÉTAPE C — Correction d'une amorce sans solution valide :
+1. Cherche dans ton lexique français le mot le plus probable qui :
+   - Contient un des éléments disponibles (son ou mot de la liste)
+   - Est cohérent avec l'article ou le contexte grammatical visible
+   - A des lettres visibles qui correspondent à ce que l'OCR a retranscrit
+2. Identifie l'écart entre ce mot cible et l'amorce OCR :
+   - Lettre(s) manquante(s) après le blanc → ajoute-les après les points
+   - Lettre(s) manquante(s) avant le blanc → ajoute-les avant les points
+   - Lettre(s) mal lue(s) dans l'amorce (confusion graphique cursive) → remplace-les
+   - Espace parasite dans un groupe de lettres → supprime l'espace
+3. Corrige l'amorce en conséquence. Ne complète jamais le blanc lui-même.
 
-   CAS A — Lettre manquante en FIN de mot (OCR a coupé trop tôt) :
-   - Identifie quelle lettre finale permettrait d'obtenir un mot réel
-   - "un b.........." + oeu + f = "bœuf" ✓ → corrige en "un b..........f"
-   - "l'h.........." + eur + e = "heure" ✓ → corrige en "l'h..........e"
-
-   CAS B — Lettre de DÉBUT mal lue (confusion cursive fréquente) :
-   En écriture cursive, certaines lettres se ressemblent visuellement :
-   f ↔ l (jambage similaire) : "ll.........." → peut être "fl.........." → "fleur" ✓
-   cl ↔ d, rn ↔ m, etc.
-   - Teste les substitutions courantes sur le début du mot
-   - Si une substitution donne un mot valide avec un des sons disponibles → applique-la
-   - "ll.........." → substitue ll→fl → "fl" + "eur" = "fleur" ✓ → corrige en "fl.........."
-
-   CAS C — Groupe consonantique scindé par un espace parasite :
-   - "un p n.........." → "pn" + "eu" = "pneu" ✓ → corrige en "un pn.........."
-
-4. NE TOUCHE PAS aux mots-amorces dont au moins une combinaison est déjà valide.
-
-5. NE JAMAIS compléter les blancs — la lettre manquante s'ajoute AUTOUR des points, pas à la place.
+RÈGLE ABSOLUE : les points "........." représentent l'espace-réponse élève.
+Ne jamais les supprimer ni les remplacer par la réponse.
+La correction porte uniquement sur les lettres AUTOUR des points.
 
 Retourne le texte corrigé uniquement. Sans commentaire.`,
         messages: [{
