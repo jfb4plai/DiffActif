@@ -209,8 +209,16 @@ ${antiClaudisation(niveauLabel, typeLabel)}`
   if (action === 'appliquer_au') {
     return `${base}
 
-Tu appliques les Aménagements Universels (AU) à un document scolaire.
+Tu appliques les Aménagements Universels (AU) à un document scolaire destiné aux ÉLÈVES.
 Les AU améliorent l'accessibilité pour TOUS les élèves sans stigmatiser personne.
+
+RÈGLE ABSOLUE — CE DOCUMENT EST POUR LES ÉLÈVES, PAS UN CORRIGÉ :
+- Les blancs à remplir (______, ......., espaces vides dans les phrases) sont des espaces-réponse élève.
+- INTERDIT de les compléter, même partiellement. Jamais.
+- "une pas......." reste "une pas......." — JAMAIS "une pastille" ni "une past.....e".
+- "Elle mange un ....... cuit dur." reste avec le blanc intact — JAMAIS "Elle mange un œuf cuit dur."
+- "un j............" reste "un j............" — JAMAIS "un jour".
+- Cette règle prime sur toute autre instruction. Aucune exception.
 
 AMÉNAGEMENTS UNIVERSELS À APPLIQUER :
 1. Consignes courtes — max 15 mots par phrase, une idée par phrase
@@ -237,21 +245,21 @@ Cas 2 — Exercice de complétion avec amorces : si l'exercice demande de compl�
   Le picto représente le MOT COMPLET (pas la syllabe manquante). Le blanc à compléter reste présent.
 - Ne pas insérer de picto pour les éléments purement décoratifs sans lien avec la tâche de l'élève.
 
-PASSAGES INCERTAINS [? ?] :
-Si le texte source contient des marqueurs [?..?] (doutes OCR non résolus), tente de les résoudre avant d'appliquer les AU :
+PASSAGES INCERTAINS [? ?] — RÉSOLUTION OCR UNIQUEMENT :
+Les marqueurs [?..?] signalent un MOT QUI DEVAIT ÊTRE LISIBLE mais que le scanner n'a pas reconnu.
+Ce n'est PAS un blanc élève — c'est un défaut de numérisation à corriger.
 - Applique l'accord grammatical du contexte immédiat (article, genre, nombre).
   Ex : "un [?n?]eu" → article masculin "un" → "pneu" ✓ (et non "peur", féminin).
 - Utilise le champ phonologique du document (son traité dans le titre ou la consigne).
 - Si le mot est identifiable avec certitude ou forte probabilité → inscris le mot résolu sans marqueur.
 - Si vraiment insoluble → conserve [? texte douteux ?] tel quel dans le document AU.
+DISTINCTION CRITIQUE : [? ?] = erreur OCR à corriger. "......." ou "______" = espace-réponse élève à NE PAS TOUCHER.
 
 RÈGLES :
 - Retourne le document reformaté, rien d'autre
 - Conserve la structure complète (aucun contenu supprimé)
 - N'ajoute pas de commentaire, d'introduction ni de conclusion
-- Les blancs à compléter restent des blancs : ______
-- Les suites de points « ....... » dans les exercices sont des espaces-réponse élève — les conserver EXACTEMENT tels quels, sans les compléter, sans ajouter de lettres avant ou après. Ex : « une pas....... » reste « une pas....... » — ne jamais écrire « une pastille » ni « une past.....e ».
-- Ne jamais fournir les réponses aux exercices — le document est destiné aux élèves, pas un corrigé.
+- Les blancs à compléter (______, .......) restent intacts — voir RÈGLE ABSOLUE en tête de prompt.
 - Utilise UNIQUEMENT des guillemets français : « mot » — jamais de guillemets anglais " ou "
 
 ${antiClaudisation(niveauLabel, typeLabel)}`
