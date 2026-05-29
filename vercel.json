@@ -4,8 +4,11 @@
     { "source": "/(.*)", "destination": "/index.html" }
   ],
   "functions": {
-    "api/*.js": {
-      "maxDuration": 30
+    "api/extract.js": {
+      "maxDuration": 120
+    },
+    "api/generate.js": {
+      "maxDuration": 60
     }
   }
 }

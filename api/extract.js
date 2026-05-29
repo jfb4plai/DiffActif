@@ -18,6 +18,9 @@ export default async function handler(req, res) {
   if (!images || !Array.isArray(images) || images.length === 0) {
     return res.status(400).json({ error: 'images[] requis' })
   }
+  if (images.length > 6) {
+    return res.status(400).json({ error: 'Maximum 6 pages par requête OCR.' })
+  }
 
   const apiKey = process.env.ANTHROPIC_API_KEY
   if (!apiKey) return res.status(500).json({ error: 'Clé API manquante (ANTHROPIC_API_KEY)' })
@@ -104,7 +107,8 @@ Ne commente pas.`
       }),
     })
     if (!ocrResp.ok) {
-      const e = await ocrResp.json()
+      if (ocrResp.status === 504) return res.status(504).json({ error: 'Délai dépassé — document trop volumineux. Réduisez à 4 pages maximum.' })
+      const e = await ocrResp.json().catch(() => ({}))
       return res.status(500).json({ error: e.error?.message ?? 'Erreur OCR Vision' })
     }
     const ocrData = await ocrResp.json()
@@ -125,7 +129,7 @@ NE JAMAIS marquer les blancs "______" ou les points "......" comme douteux — c
 Ne modifie rien d'autre. Retourne le texte avec les seuls marqueurs justifiés.`,
         messages: [{
           role: 'user',
-          content: `Voici le texte OCR. Vérifie la cohérence et retourne-le avec les marqueurs [? ?] sur les passages douteux :\n\n${textOcr}`,
+          content: `Voici le texte OCR. Vérifie la cohérence et retourne-le avec les marqueurs [? ?] sur les passages douteux :\n\n<texte_ocr>\n${textOcr}\n</texte_ocr>`,
         }],
       }),
     })
@@ -171,7 +175,7 @@ Règles absolues :
 - Retourne uniquement le texte résolu, sans commentaire.`,
         messages: [{
           role: 'user',
-          content: `Voici le texte avec les passages incertains [?..?]. Résous-les en appliquant les 3 règles :\n\n${textApresVerif}`,
+          content: `Voici le texte avec les passages incertains [?..?]. Résous-les en appliquant les 3 règles :\n\n<texte_ocr>\n${textApresVerif}\n</texte_ocr>`,
         }],
       }),
     })
@@ -225,7 +229,7 @@ La correction porte uniquement sur les lettres AUTOUR des points.
 Retourne le texte corrigé uniquement. Sans commentaire.`,
         messages: [{
           role: 'user',
-          content: `Voici le texte OCR. Valide chaque exercice de complétion et corrige les mots-amorces dont aucune combinaison n'est valide :\n\n${textApresResol}`,
+          content: `Voici le texte OCR. Valide chaque exercice de complétion et corrige les mots-amorces dont aucune combinaison n'est valide :\n\n<texte_ocr>\n${textApresResol}\n</texte_ocr>`,
         }],
       }),
     })
