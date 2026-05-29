@@ -7,6 +7,25 @@ import { exportAdaptationsDocx, exportUniverselDocx, exportProfilDocx } from '..
 import { extractFile } from '../lib/extractFile'
 import { fetchPictosForText } from '../lib/arasaac'
 
+// ── Protection des blancs-réponse élève ──────────────────────
+// Remplace ..... et _____ par des tokens avant envoi à l'IA,
+// les restaure exactement après réception — l'IA ne peut pas compléter ce qu'elle ne voit pas.
+const BLANK_RE = /\.{3,}|_{3,}|…/g
+
+function protectBlanks(text) {
+  const map = []
+  const protected_ = text.replace(BLANK_RE, match => {
+    const token = `«BLANC_${map.length}»`
+    map.push(match)
+    return token
+  })
+  return { protected: protected_, map }
+}
+
+function restoreBlanks(text, map) {
+  return text.replace(/«BLANC_(\d+)»/g, (_, i) => map[Number(i)] ?? '')
+}
+
 // ── Validation AU (client-side) ───────────────────────────────
 function validateAuRules(text) {
   const lines = text.split('\n')
@@ -218,18 +237,20 @@ export default function Module2_Adapter() {
     if (!activite.trim()) return
     setGeneratingAu(true)
     try {
+      const { protected: activiteProtected, map: blanksMap } = protectBlanks(activite)
       const res = await fetch('/api/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           action: 'appliquer_au',
-          context: { activite, matiere, niveau, type_enseignement: typeEns },
+          context: { activite: activiteProtected, matiere, niveau, type_enseignement: typeEns },
         }),
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error ?? 'Erreur serveur')
-      setAuTexte(data.text)
-      setAuValidation(validateAuRules(data.text))
+      const auTexteRestored = restoreBlanks(data.text, blanksMap)
+      setAuTexte(auTexteRestored)
+      setAuValidation(validateAuRules(auTexteRestored))
     } catch (err) {
       setError(err.message)
     }
