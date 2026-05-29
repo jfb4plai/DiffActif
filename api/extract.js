@@ -55,8 +55,10 @@ Un mot partiel suivi de points ou de blancs est un ESPACE-RÉPONSE ÉLÈVE — l
   Ex : [?chien / chier?] si deux lectures sont possibles — jamais sur des blancs d'exercice
 
 ÉTAPE 3 — CONTRÔLE DE COHÉRENCE :
-- Vérifie que chaque mot est cohérent avec le contexte identifié
-- En cas d'ambiguïté OCR, préfère le mot du champ lexical probable plutôt qu'une transcription littérale improbable
+- Vérifie que chaque MOT COMPLET est cohérent avec le contexte identifié
+- Ce contrôle s'applique UNIQUEMENT aux mots complets du document (titres, listes, consignes, exemples).
+- Il NE s'applique PAS aux mots partiels suivis de points — ceux-ci sont des blancs-réponse (voir RÈGLE ABSOLUE).
+- En cas d'ambiguïté OCR sur un mot complet, préfère le mot du champ lexical probable plutôt qu'une transcription littérale improbable
 - EXERCICES DE PHONOLOGIE : les sons listés dans le titre DOIVENT former une famille phonologique cohérente
   Familles valides : "eu / oeu / eur / oeur", "an / en / am / em", "in / ain / ein", "ill / ail / eil / euil", "ou / on", "oi / oin"…
   En cursive/manuscrit : le "e" ressemble visuellement à un "o" → vérifier la cohérence AVANT de valider
