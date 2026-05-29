@@ -47,7 +47,7 @@ function validateAuRules(text) {
   const phrasesCourtesOk = longues.length === 0
 
   // Règle 4 : espaces-réponse préservés (______)
-  const nbBlancs = (text.match(/_{4,}/g) || []).length
+  const nbBlancs = (text.match(/_{3,}/g) || []).length
 
   // Règle 5 : marqueurs [saut_de_page]
   const nbSauts = (text.match(/\[saut_de_page\]/gi) || []).length

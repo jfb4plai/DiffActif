@@ -562,7 +562,7 @@ function buildPictoAnswerTable(mots, answerItems, pictoMap) {
           children: [new Paragraph({
             children: [new TextRun({ text: answerItems[idx]?.trim() ?? '' })],
             alignment: AlignmentType.CENTER,
-            spacing: { after: 100, line: 240, lineRule: 'exact' },
+            spacing: { after: 100, line: 240, lineRule: 'atLeast' },
           })],
         })),
       }),

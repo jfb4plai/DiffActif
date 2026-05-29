@@ -105,7 +105,7 @@ function buildSystemPrompt(action, context) {
     return `${base}
 
 Tu fournis des conseils pédagogiques ciblés par profil d'élèves à besoins spécifiques.
-La base de travail est un document déjà mis en Aménagements Universels (AU).
+La base de travail est le document fourni — avec ou sans Aménagements Universels préalables.
 
 Format par profil :
 [PROFIL] — Conseils pédagogiques
