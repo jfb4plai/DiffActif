@@ -38,14 +38,32 @@ export default async function handler(req, res) {
 - Repère le champ lexical attendu selon le titre et les éléments visibles
 
 RÈGLE ABSOLUE — BLANCS ET MOTS PARTIELS (priorité maximale) :
-Un mot partiel suivi de points ou de blancs est un ESPACE-RÉPONSE ÉLÈVE — l'élève doit le compléter, pas toi.
-- Transcris-le EXACTEMENT tel quel, avec les points.
-- "un j.........." → transcris "un j.........." — JAMAIS "un jeu"
-- "un b..........f" → transcris "un b..........f" — JAMAIS "un bœuf"
-- "j..........di" → transcris "j..........di" — JAMAIS "jeudi"
-- "Elle mange un .......... cuit dur." → conserve les points — JAMAIS "Elle mange un œuf cuit dur."
-- Même si tu connais la réponse. Même si le contexte phonologique est évident. Jamais d'exception.
-- Cette règle prime sur toute interprétation contextuelle ou phonologique.
+Un mot partiel suivi de pointillés, tirets ou d'une ligne est un ESPACE-RÉPONSE ÉLÈVE — l'élève doit le compléter, pas toi.
+Transcris ces espaces-réponse sous forme de dix points : ..........
+Ne jamais compléter le mot, même si la réponse est évidente.
+
+Cas 1 — Lettres AVANT les pointillés seulement :
+  "un j.........." → transcris "un j.........." — JAMAIS "un jeu"
+  "ma s.........." → transcris "ma s.........." — JAMAIS "ma sœur"
+
+Cas 2 — Lettres AVANT et APRÈS les pointillés (les deux sont des amorces du mot) :
+  "un b..........f" → transcris "un b..........f" — JAMAIS "un bœuf" ni "un b.........."
+  "l'h..........e" → transcris "l'h..........e" — JAMAIS "l'heure" ni "l'h.........."
+  "un vi..........x" → transcris "un vi..........x" — JAMAIS "un vieux"
+  "un n..........d" → transcris "un n..........d" — JAMAIS "un nœud"
+  ⚠️ La lettre après les pointillés est OBLIGATOIRE — ne jamais l'omettre.
+
+Cas 3 — Lettres AVANT les pointillés avec suite de texte :
+  "j..........di" → transcris "j..........di" — JAMAIS "jeudi"
+  "un fact.........." → transcris "un fact.........."
+
+Cas 4 — Blank en milieu de phrase :
+  "Elle mange un .......... cuit dur." → conserve les points — JAMAIS "Elle mange un œuf cuit dur."
+
+Cas 5 — Groupes consonantiques (ne jamais ajouter d'espace à l'intérieur) :
+  "pn.........." → transcris "pn.........." — JAMAIS "p n.........."
+
+Cette règle prime sur toute interprétation contextuelle ou phonologique. Jamais d'exception.
 
 ÉTAPE 2 — TRANSCRIPTION FIDÈLE :
 - Extrais TOUT le texte dans l'ordre naturel de lecture
