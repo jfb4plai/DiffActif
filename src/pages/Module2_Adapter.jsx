@@ -23,7 +23,11 @@ function protectBlanks(text) {
 }
 
 function restoreBlanks(text, map) {
-  return text.replace(/«BLANC_(\d+)»/g, (_, i) => map[Number(i)] ?? '')
+  const restored = text.replace(/«BLANC_(\d+)»/g, (_, i) => map[Number(i)] ?? '')
+  if (/«BLANC_\d+»/.test(restored)) {
+    throw new Error('Erreur interne : un espace-réponse n\'a pas été restauré. Veuillez regénérer.')
+  }
+  return restored
 }
 
 // ── Validation AU (client-side) ───────────────────────────────
@@ -287,19 +291,22 @@ export default function Module2_Adapter() {
     setProfilSections({})
 
     try {
+      const baseText = auTexte || activite
+      const { protected: baseProtected, map: blanksMap } = protectBlanks(baseText)
       const res = await fetch('/api/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           action: 'adapter_activite',
-          context: { activite, objectif, profils: profilsChoisis, niveau, type_enseignement: typeEns, matiere, au_texte: auTexte || null, historique_enseignant: histoAdaptations.length ? histoAdaptations : undefined },
+          context: { activite: baseProtected, objectif, profils: profilsChoisis, niveau, type_enseignement: typeEns, matiere, au_texte: auTexte ? baseProtected : null, historique_enseignant: histoAdaptations.length ? histoAdaptations : undefined },
         }),
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error ?? 'Erreur serveur')
-      setResultat(data.text)
-      setTexteFinal(data.text)
-      setProfilSections(parseProfileSections(data.text, profilsChoisis))
+      const resultatRestored = restoreBlanks(data.text, blanksMap)
+      setResultat(resultatRestored)
+      setTexteFinal(resultatRestored)
+      setProfilSections(parseProfileSections(resultatRestored, profilsChoisis))
     } catch (err) {
       setError(err.message)
     }

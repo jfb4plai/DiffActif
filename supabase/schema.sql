@@ -48,6 +48,7 @@ create table if not exists public.adaptations (
   type_enseignement  text,
   variantes_ia       text,    -- proposition brute de Claude Haiku
   texte_final        text,    -- version personnalisée par l'enseignant (20%)
+  feedback           text,    -- 'positif' | 'negatif' | null
   created_at         timestamptz default now()
 );
 
