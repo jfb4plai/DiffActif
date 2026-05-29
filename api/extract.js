@@ -177,11 +177,59 @@ Règles absolues :
     })
 
     if (!resolResp.ok) {
-      // Si l'étape 3 échoue, on retourne le résultat de l'étape 2 sans bloquer
       return res.status(200).json({ text: textApresVerif, hasDoutes: nbDoutesApresVerif > 0, nbDoutes: nbDoutesApresVerif })
     }
     const resolData = await resolResp.json()
-    const textFinal = resolData.content[0].text.trim()
+    const textApresResol = resolData.content[0].text.trim()
+
+    // ── Étape 4 : Validation par complétion simulée ──────────────────────────
+    // Pour chaque exercice de complétion (phonologique ou liste de mots),
+    // l'IA tente de compléter chaque mot-amorce avec les éléments disponibles.
+    // Si aucune combinaison ne donne un mot français réel → OCR incomplet → correction.
+    const validResp = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: HEADERS,
+      body: JSON.stringify({
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 4096,
+        system: `Tu valides la qualité OCR d'un document scolaire en simulant la résolution des exercices.
+
+PROCÉDURE pour chaque exercice de complétion :
+
+1. IDENTIFIE les éléments à insérer :
+   - Exercice phonologique : sons listés dans la consigne (ex : eu / oeu / eur / oeur)
+   - Exercice de complétion : liste de mots fournis (ex : fleurs – œuf – heure – beurre – jeu)
+
+2. POUR CHAQUE MOT-AMORCE avec blancs (ex : "un b..........") :
+   - Teste mentalement chaque élément disponible en l'insérant dans le blanc
+   - Vérifie si au moins une combinaison donne un mot français réel
+   - "un b.........." + eu/oeu/eur/oeur → "beu" ✗ / "bœu" ✗ / "beur" ✗ / "bœur" ✗ → AUCUN mot valide → OCR incomplet
+
+3. SI AUCUNE combinaison n'est valide → l'OCR a manqué une lettre (début ou fin du mot) :
+   - Identifie la lettre manquante en cherchant quel mot français correspond à ce contexte
+   - Corrige le mot-amorce en ajoutant la lettre manquante à sa position (avant ou après les points)
+   - "un b.........." → la seule solution est "un b..........f" → "un bœuf" ✓ → corrige en "un b..........f"
+   - "l'h.........." → "l'h..........e" → "l'heure" ✓ → corrige en "l'h..........e"
+   - "un p n.........." → groupe consonantique scindé → "un pn.........." → "un pneu" ✓
+
+4. NE TOUCHE PAS aux mots-amorces dont au moins une combinaison est déjà valide.
+
+5. NE JAMAIS compléter les blancs — la lettre manquante s'ajoute AUTOUR des points, pas à la place.
+
+Retourne le texte corrigé uniquement. Sans commentaire.`,
+        messages: [{
+          role: 'user',
+          content: `Voici le texte OCR. Valide chaque exercice de complétion et corrige les mots-amorces dont aucune combinaison n'est valide :\n\n${textApresResol}`,
+        }],
+      }),
+    })
+
+    if (!validResp.ok) {
+      const nbDoutes0 = (textApresResol.match(/\[\?/g) || []).length
+      return res.status(200).json({ text: textApresResol, hasDoutes: nbDoutes0 > 0, nbDoutes: nbDoutes0 })
+    }
+    const validData = await validResp.json()
+    const textFinal = validData.content[0].text.trim()
     const nbDoutes = (textFinal.match(/\[\?/g) || []).length
 
     return res.status(200).json({ text: textFinal, hasDoutes: nbDoutes > 0, nbDoutes })
