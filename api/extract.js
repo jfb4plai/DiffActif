@@ -205,12 +205,23 @@ PROCÉDURE pour chaque exercice de complétion :
    - Vérifie si au moins une combinaison donne un mot français réel
    - "un b.........." + eu/oeu/eur/oeur → "beu" ✗ / "bœu" ✗ / "beur" ✗ / "bœur" ✗ → AUCUN mot valide → OCR incomplet
 
-3. SI AUCUNE combinaison n'est valide → l'OCR a manqué une lettre (début ou fin du mot) :
-   - Identifie la lettre manquante en cherchant quel mot français correspond à ce contexte
-   - Corrige le mot-amorce en ajoutant la lettre manquante à sa position (avant ou après les points)
-   - "un b.........." → la seule solution est "un b..........f" → "un bœuf" ✓ → corrige en "un b..........f"
-   - "l'h.........." → "l'h..........e" → "l'heure" ✓ → corrige en "l'h..........e"
-   - "un p n.........." → groupe consonantique scindé → "un pn.........." → "un pneu" ✓
+3. SI AUCUNE combinaison n'est valide → deux cas possibles :
+
+   CAS A — Lettre manquante en FIN de mot (OCR a coupé trop tôt) :
+   - Identifie quelle lettre finale permettrait d'obtenir un mot réel
+   - "un b.........." + oeu + f = "bœuf" ✓ → corrige en "un b..........f"
+   - "l'h.........." + eur + e = "heure" ✓ → corrige en "l'h..........e"
+
+   CAS B — Lettre de DÉBUT mal lue (confusion cursive fréquente) :
+   En écriture cursive, certaines lettres se ressemblent visuellement :
+   f ↔ l (jambage similaire) : "ll.........." → peut être "fl.........." → "fleur" ✓
+   cl ↔ d, rn ↔ m, etc.
+   - Teste les substitutions courantes sur le début du mot
+   - Si une substitution donne un mot valide avec un des sons disponibles → applique-la
+   - "ll.........." → substitue ll→fl → "fl" + "eur" = "fleur" ✓ → corrige en "fl.........."
+
+   CAS C — Groupe consonantique scindé par un espace parasite :
+   - "un p n.........." → "pn" + "eu" = "pneu" ✓ → corrige en "un pn.........."
 
 4. NE TOUCHE PAS aux mots-amorces dont au moins une combinaison est déjà valide.
 
