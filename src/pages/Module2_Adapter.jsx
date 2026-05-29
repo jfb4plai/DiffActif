@@ -480,7 +480,19 @@ export default function Module2_Adapter() {
             </div>
             {importError && <p className="text-xs text-red-500 mt-1">{importError}</p>}
             {importedFile && !importing && !hasDoutes && (
-              <p className="text-xs text-gray-400 mt-1">Texte extrait — vérifiez avant de générer.</p>
+              <div className="mt-2 flex items-start gap-2 rounded-lg bg-blue-50 border border-blue-200 px-3 py-2">
+                <span className="text-blue-500 text-sm mt-0.5">ℹ</span>
+                <div className="text-xs text-blue-800 space-y-1">
+                  <p><strong>Texte extrait — relisez avant de générer.</strong></p>
+                  <p>La qualité de l'OCR dépend du document d'origine. Vérifiez particulièrement :</p>
+                  <ul className="list-disc list-inside space-y-0.5 pl-1">
+                    <li>Les <strong>espaces-réponse</strong> (.......) sont-ils bien présents et intacts ?</li>
+                    <li>Les <strong>lettres encadrant les blancs</strong> sont-elles complètes ? (ex : <code className="bg-blue-100 px-1 rounded">un b..........f</code>, pas <code className="bg-blue-100 px-1 rounded">un b..........</code>)</li>
+                    <li>Les <strong>mots courants</strong> sont-ils correctement reconnus ?</li>
+                  </ul>
+                  <p className="text-blue-600">Corrigez directement dans la zone de texte ci-dessous si nécessaire.</p>
+                </div>
+              </div>
             )}
             {importedFile && !importing && hasDoutes && (
               <div className="mt-2 flex items-start gap-2 rounded-lg bg-amber-50 border border-amber-200 px-3 py-2">
