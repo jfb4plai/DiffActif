@@ -37,10 +37,20 @@ export default async function handler(req, res) {
 - Identifie le type d'exercice dominant (phonologie, conjugaison, vocabulaire, calcul…)
 - Repère le champ lexical attendu selon le titre et les éléments visibles
 
+RÈGLE ABSOLUE — BLANCS ET MOTS PARTIELS (priorité maximale) :
+Un mot partiel suivi de points ou de blancs est un ESPACE-RÉPONSE ÉLÈVE — l'élève doit le compléter, pas toi.
+- Transcris-le EXACTEMENT tel quel, avec les points.
+- "un j.........." → transcris "un j.........." — JAMAIS "un jeu"
+- "un b..........f" → transcris "un b..........f" — JAMAIS "un bœuf"
+- "j..........di" → transcris "j..........di" — JAMAIS "jeudi"
+- "Elle mange un .......... cuit dur." → conserve les points — JAMAIS "Elle mange un œuf cuit dur."
+- Même si tu connais la réponse. Même si le contexte phonologique est évident. Jamais d'exception.
+- Cette règle prime sur toute interprétation contextuelle ou phonologique.
+
 ÉTAPE 2 — TRANSCRIPTION FIDÈLE :
 - Extrais TOUT le texte dans l'ordre naturel de lecture
 - Respecte la structure : numérotation, sauts de ligne, paragraphes, tirets
-- Les espaces vides / lignes pointillées / blancs à compléter par l'élève → transcris-les comme "______" (ne pas les marquer comme douteux)
+- Les espaces vides / lignes pointillées / blancs à compléter par l'élève → transcris les points exactement tels qu'ils apparaissent (ex : "un j.........." reste "un j..........")
 - Pour tout passage TEXTE réellement illisible ou ambigu : [?mot douteux?]
   Ex : [?chien / chier?] si deux lectures sont possibles — jamais sur des blancs d'exercice
 
