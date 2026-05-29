@@ -533,7 +533,7 @@ function buildPictoAnswerTable(mots, answerItems, pictoMap) {
     columnWidths,
     borders: noBorders(),
     rows: [
-      // Ligne 1 : pictogrammes — line spacing fixé à 1.0 exact pour isoler la table du 1.5x du corps
+      // Ligne 1 : pictogrammes — atLeast isole du 1.5x sans clipper les images
       new TableRow({
         cantSplit: true,
         children: mots.map((mot, idx) => new TableCell({
@@ -548,7 +548,7 @@ function buildPictoAnswerTable(mots, answerItems, pictoMap) {
                 : [new TextRun({ text: `[${mot}]`, italics: true, color: '374151', size: 22 })]
             })(),
             alignment: AlignmentType.CENTER,
-            spacing: { after: 60, line: 240, lineRule: 'exact' },
+            spacing: { after: 60, line: 240, lineRule: 'atLeast' },
           })],
         })),
       }),
