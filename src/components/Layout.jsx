@@ -29,7 +29,7 @@ export default function Layout({ children }) {
         <div className="p-4 border-b border-gray-100">
           <LogoPlai size="sm" />
           <div className="mt-2">
-            <div className="font-bold text-brand-900 text-sm">DiffActif</div>
+            <div className="font-bold text-jfb-noir text-sm">DiffActif</div>
             <div className="text-xs text-gray-400">Différenciation pédagogique — PLAI</div>
           </div>
         </div>
@@ -43,7 +43,7 @@ export default function Layout({ children }) {
               className={({ isActive }) =>
                 `flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
                   isActive
-                    ? 'bg-brand-50 text-brand-700'
+                    ? 'bg-jfb-beige text-jfb-rose'
                     : 'text-gray-600 hover:bg-gray-50 hover:text-gray-800'
                 }`
               }
@@ -51,7 +51,7 @@ export default function Layout({ children }) {
               <span className="text-base">{item.icon}</span>
               <span className="flex-1">{item.label}</span>
               {item.badge && (
-                <span className="bg-accent-500 text-white text-xs px-1.5 py-0.5 rounded-full">
+                <span className="bg-jfb-rose text-white text-xs px-1.5 py-0.5 rounded-full">
                   {item.badge}
                 </span>
               )}
@@ -62,8 +62,8 @@ export default function Layout({ children }) {
         {/* Profil utilisateur */}
         <div className="p-3 border-t border-gray-100">
           <div className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-50 cursor-pointer">
-            <div className="w-8 h-8 bg-brand-100 rounded-full flex items-center justify-center">
-              <span className="text-brand-700 text-sm font-semibold">
+            <div className="w-8 h-8 bg-jfb-beige rounded-full flex items-center justify-center">
+              <span className="text-jfb-rose text-sm font-semibold">
                 {profile?.prenom?.[0]?.toUpperCase() ?? '?'}
               </span>
             </div>

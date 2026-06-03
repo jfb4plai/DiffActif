@@ -29,11 +29,11 @@ export default function ResetPassword() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-brand-50 to-brand-100 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-jfb-beige to-jfb-beige-dk flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <div className="flex justify-center mb-4"><LogoPlai size="lg" /></div>
-          <h1 className="text-2xl font-bold text-brand-900">Nouveau mot de passe</h1>
+          <h1 className="text-2xl font-bold text-jfb-noir">Nouveau mot de passe</h1>
         </div>
         <div className="card">
           <form onSubmit={handleSubmit} className="space-y-4">

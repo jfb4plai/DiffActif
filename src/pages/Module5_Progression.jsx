@@ -147,30 +147,30 @@ export default function Module5_Progression() {
           <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Votre activité DiffActif</p>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
             <div className="bg-white rounded-xl p-3 border border-gray-200 text-center">
-              <div className="text-2xl font-bold text-brand-600">{statsAdapt.total}</div>
+              <div className="text-2xl font-bold text-jfb-rose">{statsAdapt.total}</div>
               <div className="text-xs text-gray-500 mt-0.5">adaptation{statsAdapt.total > 1 ? 's' : ''} créée{statsAdapt.total > 1 ? 's' : ''}</div>
             </div>
             {statsAdapt.topProfil && (
               <div className="bg-white rounded-xl p-3 border border-gray-200 text-center">
-                <div className="text-sm font-bold text-brand-600 capitalize">{statsAdapt.topProfil}</div>
+                <div className="text-sm font-bold text-jfb-rose capitalize">{statsAdapt.topProfil}</div>
                 <div className="text-xs text-gray-500 mt-0.5">profil le + adapté</div>
               </div>
             )}
             {statsAdapt.nbMatieres > 0 && (
               <div className="bg-white rounded-xl p-3 border border-gray-200 text-center">
-                <div className="text-2xl font-bold text-brand-600">{statsAdapt.nbMatieres}</div>
+                <div className="text-2xl font-bold text-jfb-rose">{statsAdapt.nbMatieres}</div>
                 <div className="text-xs text-gray-500 mt-0.5">matière{statsAdapt.nbMatieres > 1 ? 's' : ''} différente{statsAdapt.nbMatieres > 1 ? 's' : ''}</div>
               </div>
             )}
             {statsAdapt.derniereDate && (
               <div className="bg-white rounded-xl p-3 border border-gray-200 text-center">
-                <div className="text-sm font-bold text-brand-600">{statsAdapt.derniereDate}</div>
+                <div className="text-sm font-bold text-jfb-rose">{statsAdapt.derniereDate}</div>
                 <div className="text-xs text-gray-500 mt-0.5">dernière adaptation</div>
               </div>
             )}
             {statsAdapt.nbFeedbacks > 0 && (
               <div className="bg-white rounded-xl p-3 border border-gray-200 text-center">
-                <div className="text-sm font-bold text-brand-600">
+                <div className="text-sm font-bold text-jfb-rose">
                   {statsAdapt.nbPositifs}/{statsAdapt.nbFeedbacks} 👍
                 </div>
                 <div className="text-xs text-gray-500 mt-0.5">feedbacks positifs</div>
@@ -182,9 +182,9 @@ export default function Module5_Progression() {
 
       {/* Score global */}
       {rempli && (
-        <div className="card bg-gradient-to-r from-brand-50 to-purple-50 border-brand-100">
+        <div className="card bg-gradient-to-r from-jfb-beige to-purple-50 border-jfb-bordure">
           <div className="flex items-center gap-4">
-            <div className="w-20 h-20 rounded-full bg-brand-600 flex items-center justify-center flex-shrink-0">
+            <div className="w-20 h-20 rounded-full bg-jfb-noir flex items-center justify-center flex-shrink-0">
               <span className="text-white text-2xl font-bold">{pct}%</span>
             </div>
             <div>
@@ -213,7 +213,7 @@ export default function Module5_Progression() {
             <ul className="text-xs text-gray-600 mb-4 space-y-1">
               {dim.indicateurs.map((ind, i) => (
                 <li key={i} className="flex items-start gap-2">
-                  <span className="text-brand-500 mt-0.5">•</span>
+                  <span className="text-jfb-rose mt-0.5">•</span>
                   <span>{ind}</span>
                 </li>
               ))}
@@ -274,8 +274,8 @@ export default function Module5_Progression() {
               const p = Math.round((total / scoreMax) * 100)
               return (
                 <div key={h.id} className="card py-3 px-4 flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-full bg-brand-100 flex items-center justify-center flex-shrink-0">
-                    <span className="text-brand-700 text-sm font-bold">{p}%</span>
+                  <div className="w-12 h-12 rounded-full bg-jfb-beige flex items-center justify-center flex-shrink-0">
+                    <span className="text-jfb-rose text-sm font-bold">{p}%</span>
                   </div>
                   <div className="flex-1">
                     <div className="text-sm font-medium text-gray-800">

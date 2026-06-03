@@ -20,12 +20,12 @@ function AppRoutes() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-brand-50">
+      <div className="min-h-screen flex items-center justify-center bg-jfb-beige">
         <div className="text-center">
-          <div className="w-12 h-12 bg-brand-600 rounded-2xl flex items-center justify-center mx-auto mb-3 animate-pulse">
+          <div className="w-12 h-12 bg-jfb-noir rounded-2xl flex items-center justify-center mx-auto mb-3 animate-pulse">
             <span className="text-white text-lg font-bold">DA</span>
           </div>
-          <p className="text-brand-700 text-sm">Chargement...</p>
+          <p className="text-jfb-rose text-sm">Chargement...</p>
         </div>
       </div>
     )

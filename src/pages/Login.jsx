@@ -44,14 +44,14 @@ export default function Login() {
   const titles = { login: 'Se connecter', register: 'Créer mon compte', reset: 'Réinitialiser' }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-brand-50 to-brand-100 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-jfb-beige to-jfb-beige-dk flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <div className="flex justify-center mb-4">
             <LogoPlai size="lg" />
           </div>
-          <h1 className="text-3xl font-bold text-brand-900">DiffActif</h1>
-          <p className="text-brand-700 mt-1 text-sm">Différenciation pédagogique — PLAI</p>
+          <h1 className="text-3xl font-bold text-jfb-noir">DiffActif</h1>
+          <p className="text-jfb-rose mt-1 text-sm">Différenciation pédagogique — PLAI</p>
         </div>
 
         <div className="card">
@@ -60,7 +60,7 @@ export default function Login() {
               <button
                 onClick={() => setMode('login')}
                 className={`flex-1 py-2 rounded-md text-sm font-medium transition-all ${
-                  mode === 'login' ? 'bg-white shadow text-brand-700' : 'text-gray-500 hover:text-gray-700'
+                  mode === 'login' ? 'bg-white shadow text-jfb-rose' : 'text-gray-500 hover:text-gray-700'
                 }`}
               >
                 Connexion
@@ -68,7 +68,7 @@ export default function Login() {
               <button
                 onClick={() => setMode('register')}
                 className={`flex-1 py-2 rounded-md text-sm font-medium transition-all ${
-                  mode === 'register' ? 'bg-white shadow text-brand-700' : 'text-gray-500 hover:text-gray-700'
+                  mode === 'register' ? 'bg-white shadow text-jfb-rose' : 'text-gray-500 hover:text-gray-700'
                 }`}
               >
                 Inscription
@@ -129,7 +129,7 @@ export default function Login() {
             {mode === 'login' && (
               <button
                 onClick={() => { setMode('reset'); setError(''); setSuccess('') }}
-                className="text-xs text-gray-400 hover:text-brand-600 transition-colors"
+                className="text-xs text-gray-400 hover:text-jfb-rose transition-colors"
               >
                 Mot de passe oublié ?
               </button>
@@ -137,7 +137,7 @@ export default function Login() {
             {mode === 'reset' && (
               <button
                 onClick={() => { setMode('login'); setError(''); setSuccess('') }}
-                className="text-xs text-gray-400 hover:text-brand-600 transition-colors"
+                className="text-xs text-gray-400 hover:text-jfb-rose transition-colors"
               >
                 ← Retour à la connexion
               </button>

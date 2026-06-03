@@ -38,7 +38,7 @@ export default function Dashboard() {
       icon: '✨',
       title: 'Adapter une activité',
       desc: 'Colle une activité → variantes par profil',
-      color: 'bg-brand-600 hover:bg-brand-700 text-white',
+      color: 'bg-jfb-noir hover:bg-jfb-noir-doux text-white',
       to: '/adapter',
     },
     {
@@ -52,7 +52,7 @@ export default function Dashboard() {
       icon: '📋',
       title: 'Créer une séquence',
       desc: 'Séquence différenciée CUA complète',
-      color: 'bg-accent-500 hover:bg-accent-600 text-white',
+      color: 'bg-jfb-noir hover:bg-jfb-noir-doux text-white',
       to: '/sequence',
     },
     {
@@ -81,8 +81,8 @@ export default function Dashboard() {
       <div className="grid grid-cols-3 gap-4">
         {[
           { label: 'Élèves (codes)', value: stats.eleves,      icon: '👥', color: 'text-purple-600' },
-          { label: 'Adaptations',    value: stats.adaptations, icon: '✨', color: 'text-brand-600' },
-          { label: 'Séquences',      value: stats.sequences,   icon: '📋', color: 'text-accent-500' },
+          { label: 'Adaptations',    value: stats.adaptations, icon: '✨', color: 'text-jfb-rose' },
+          { label: 'Séquences',      value: stats.sequences,   icon: '📋', color: 'text-jfb-rose' },
         ].map(s => (
           <div key={s.label} className="card py-4">
             <div className={`text-2xl font-bold ${s.color}`}>{loading ? '—' : s.value}</div>
@@ -111,8 +111,8 @@ export default function Dashboard() {
 
       {/* Guide démarrage (si aucune adaptation) */}
       {!loading && stats.adaptations === 0 && (
-        <div className="card border-brand-200 bg-gradient-to-br from-brand-50 to-white">
-          <h2 className="text-sm font-semibold text-brand-700 uppercase tracking-wider mb-4">
+        <div className="card border-jfb-bordure bg-gradient-to-br from-jfb-beige to-white">
+          <h2 className="text-sm font-semibold text-jfb-rose uppercase tracking-wider mb-4">
             Par où commencer ?
           </h2>
           <div className="space-y-3">
@@ -153,9 +153,9 @@ export default function Dashboard() {
             ].map(item => (
               <div
                 key={item.step}
-                className="flex items-start gap-3 p-3 rounded-lg hover:bg-brand-50 transition-colors group"
+                className="flex items-start gap-3 p-3 rounded-lg hover:bg-jfb-beige transition-colors group"
               >
-                <div className="w-7 h-7 rounded-full bg-brand-600 text-white flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5">
+                <div className="w-7 h-7 rounded-full bg-jfb-noir text-white flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5">
                   {item.step}
                 </div>
                 <div className="flex-1 min-w-0">
@@ -169,8 +169,8 @@ export default function Dashboard() {
                   onClick={() => navigate(item.to)}
                   className={`text-xs px-3 py-1.5 rounded-lg flex-shrink-0 transition-colors ${
                     item.primary
-                      ? 'bg-brand-600 text-white hover:bg-brand-700'
-                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200 group-hover:bg-brand-100 group-hover:text-brand-700'
+                      ? 'bg-jfb-noir text-white hover:bg-jfb-noir-doux'
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200 group-hover:bg-jfb-beige group-hover:text-jfb-rose'
                   }`}
                 >
                   {item.cta}
@@ -188,7 +188,7 @@ export default function Dashboard() {
             <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wider">
               Dernières adaptations
             </h2>
-            <button onClick={() => navigate('/adapter')} className="text-xs text-brand-600 hover:underline">
+            <button onClick={() => navigate('/adapter')} className="text-xs text-jfb-rose hover:underline">
               Voir tout
             </button>
           </div>
@@ -200,7 +200,7 @@ export default function Dashboard() {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
                     {(a.profils ?? []).map(p => (
-                      <span key={p} className="badge bg-brand-100 text-brand-700">{p}</span>
+                      <span key={p} className="badge bg-jfb-beige text-jfb-rose">{p}</span>
                     ))}
                     {a.matiere && <span className="badge bg-gray-100 text-gray-600">{a.matiere}</span>}
                   </div>
@@ -220,7 +220,7 @@ export default function Dashboard() {
       {loading && <div className="card animate-pulse h-32" />}
 
       {/* Principes CUA */}
-      <div className="card bg-gradient-to-r from-brand-50 to-purple-50 border-brand-100">
+      <div className="card bg-gradient-to-r from-jfb-beige to-purple-50 border-jfb-bordure">
         <h3 className="text-sm font-semibold text-gray-700 mb-3">
           Les 3 principes de la Conception Universelle de l'Apprentissage
           <span className="text-xs font-normal text-gray-400 ml-2">
@@ -229,7 +229,7 @@ export default function Dashboard() {
         </h3>
         <div className="grid grid-cols-3 gap-3">
           {PRINCIPES_CUA.map(p => (
-            <div key={p.id} className="bg-white rounded-lg p-3 border border-brand-100">
+            <div key={p.id} className="bg-white rounded-lg p-3 border border-jfb-bordure">
               <div className="text-xl mb-1">{p.icon}</div>
               <div className="text-xs font-semibold text-gray-800">{p.label}</div>
               <div className="text-xs text-gray-500 mt-0.5">{p.description}</div>

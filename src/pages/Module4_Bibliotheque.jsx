@@ -214,7 +214,7 @@ export default function Module4_Bibliotheque() {
 
       {/* Formulaire de contribution */}
       {showForm && (
-        <div className="card border-brand-200 space-y-4">
+        <div className="card border-jfb-bordure space-y-4">
           <h2 className="font-semibold text-gray-800">Votre exemple</h2>
           <div>
             <label className="label">Titre <span className="text-red-400">*</span></label>
@@ -238,7 +238,7 @@ export default function Module4_Bibliotheque() {
             <div className="flex flex-wrap gap-2">
               {PROFILS.map(p => (
                 <button key={p.value} onClick={() => toggleFormProfil(p.value)}
-                  className={`text-xs px-3 py-1.5 rounded-full border-2 transition-all ${form.profils.includes(p.value) ? 'border-brand-500 bg-brand-50 text-brand-700' : 'border-gray-200 text-gray-500'}`}>
+                  className={`text-xs px-3 py-1.5 rounded-full border-2 transition-all ${form.profils.includes(p.value) ? 'border-jfb-rose bg-jfb-beige text-jfb-rose' : 'border-gray-200 text-gray-500'}`}>
                   {p.icon} {p.label.split('/')[0]}
                 </button>
               ))}
@@ -326,7 +326,7 @@ export default function Module4_Bibliotheque() {
                 >
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap mb-2">
-                      {ex._contrib && <span className="badge bg-brand-100 text-brand-800">Mon exemple</span>}
+                      {ex._contrib && <span className="badge bg-jfb-beige text-jfb-noir">Mon exemple</span>}
                       <span className={`badge ${cua.color}`}>{cua.icon} {cua.label}</span>
                       {ex.profils.map(val => {
                         const p = profilInfo(val)
@@ -346,7 +346,7 @@ export default function Module4_Bibliotheque() {
                     <h4 className="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-2">
                       Adaptation concrète
                     </h4>
-                    <div className="bg-brand-50 rounded-xl p-4 text-sm text-gray-700 whitespace-pre-wrap leading-relaxed border border-brand-100">
+                    <div className="bg-jfb-subtil rounded-xl p-4 text-sm text-gray-700 whitespace-pre-wrap leading-relaxed border border-jfb-bordure">
                       {ex.adaptation}
                     </div>
                     {ex.reference && (

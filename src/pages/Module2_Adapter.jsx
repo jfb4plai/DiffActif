@@ -452,13 +452,13 @@ export default function Module2_Adapter() {
               onClick={() => fileInputRef.current?.click()}
               className={`border-2 border-dashed rounded-xl p-5 text-center cursor-pointer transition-all ${
                 dragOver
-                  ? 'border-brand-500 bg-brand-50'
-                  : 'border-gray-300 hover:border-brand-400 hover:bg-gray-50'
+                  ? 'border-jfb-rose bg-jfb-beige'
+                  : 'border-gray-300 hover:border-jfb-gris-cl hover:bg-gray-50'
               }`}
             >
               <input ref={fileInputRef} type="file" accept=".pdf,.docx,.jpg,.jpeg,.png,.webp" className="hidden" onChange={onFileInput} />
               {importing ? (
-                <p className="text-sm text-brand-600 font-medium">Extraction et analyse en cours...</p>
+                <p className="text-sm text-jfb-rose font-medium">Extraction et analyse en cours...</p>
               ) : importedFile ? (
                 <div className="flex items-center justify-center gap-2">
                   <span className="text-green-600 text-lg">✓</span>
@@ -472,7 +472,7 @@ export default function Module2_Adapter() {
                 <>
                   <div className="text-2xl mb-1">📄</div>
                   <p className="text-sm text-gray-600 font-medium">
-                    Glisser-déposer un fichier ou <span className="text-brand-600 underline">parcourir</span>
+                    Glisser-déposer un fichier ou <span className="text-jfb-rose underline">parcourir</span>
                   </p>
                   <p className="text-xs text-gray-400 mt-1">PDF · DOCX · JPG · PNG · WebP — max 10 Mo</p>
                 </>
@@ -545,7 +545,7 @@ export default function Module2_Adapter() {
 
       {/* Étape 2b — Document AU universel */}
       {activite.trim().length > 20 && (
-        <div className="card border-brand-100 bg-brand-50">
+        <div className="card border-jfb-bordure bg-jfb-subtil">
           <div className="flex items-center justify-between">
             <div>
               <h2 className="font-semibold text-gray-800">Document AU universel</h2>
@@ -564,7 +564,7 @@ export default function Module2_Adapter() {
 
           {auTexte && (
             <div className="mt-4 space-y-3">
-              <div className="bg-white rounded-xl p-4 text-sm text-gray-700 whitespace-pre-wrap leading-relaxed border border-brand-100 max-h-48 overflow-y-auto">
+              <div className="bg-white rounded-xl p-4 text-sm text-gray-700 whitespace-pre-wrap leading-relaxed border border-jfb-bordure max-h-48 overflow-y-auto">
                 {auTexte}
               </div>
 
@@ -603,7 +603,7 @@ export default function Module2_Adapter() {
                   type="checkbox"
                   checked={withVerbPictos}
                   onChange={e => setWithVerbPictos(e.target.checked)}
-                  className="w-4 h-4 accent-brand-500"
+                  className="w-4 h-4 accent-jfb-rose"
                 />
                 <span className="text-xs text-gray-600">
                   Picto Arasaac avant chaque verbe d'action (option)
@@ -641,8 +641,8 @@ export default function Module2_Adapter() {
               onClick={() => toggleProfil(p.value)}
               className={`flex items-center gap-3 p-3 rounded-xl border-2 text-left transition-all ${
                 profilsChoisis.includes(p.value)
-                  ? 'border-brand-500 bg-brand-50'
-                  : 'border-gray-200 hover:border-brand-200'
+                  ? 'border-jfb-rose bg-jfb-beige'
+                  : 'border-gray-200 hover:border-jfb-gris-cl'
               }`}
             >
               <span className="text-xl">{p.icon}</span>
@@ -659,7 +659,7 @@ export default function Module2_Adapter() {
               type="checkbox"
               checked={arMode}
               onChange={e => setArMode(e.target.checked)}
-              className="w-4 h-4 mt-0.5 accent-brand-500"
+              className="w-4 h-4 mt-0.5 accent-jfb-rose"
             />
             <div>
               <span className="text-xs font-medium text-blue-800">
@@ -695,7 +695,7 @@ export default function Module2_Adapter() {
 
       {/* Résultat IA + personnalisation */}
       {resultat && (
-        <div className="card border-brand-200">
+        <div className="card border-jfb-bordure">
           <div className="flex items-center justify-between mb-4">
             <h2 className="font-semibold text-gray-800">Conseils pédagogiques par profil</h2>
             <span className="text-xs text-gray-400 bg-gray-100 px-2 py-1 rounded-full">
@@ -704,7 +704,7 @@ export default function Module2_Adapter() {
           </div>
 
           {/* Lecture seule : proposition IA */}
-          <div className="bg-brand-50 rounded-xl p-4 mb-4 text-sm text-gray-700 whitespace-pre-wrap leading-relaxed border border-brand-100">
+          <div className="bg-jfb-subtil rounded-xl p-4 mb-4 text-sm text-gray-700 whitespace-pre-wrap leading-relaxed border border-jfb-bordure">
             {resultat}
           </div>
 

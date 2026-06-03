@@ -118,7 +118,7 @@ export default function Module3_Sequence() {
 
       {/* Bandeau contexte Module2 */}
       {fromModule2.activite && (
-        <div className="rounded-xl bg-brand-50 border border-brand-200 px-4 py-3 text-xs text-brand-800">
+        <div className="rounded-xl bg-jfb-beige border border-jfb-bordure px-4 py-3 text-xs text-jfb-noir">
           Formulaire pré-rempli depuis l'activité adaptée — vérifiez et ajustez avant de générer.
         </div>
       )}
@@ -126,9 +126,9 @@ export default function Module3_Sequence() {
       {/* Rappel CUA */}
       <div className="grid grid-cols-3 gap-3">
         {PRINCIPES_CUA.map(p => (
-          <div key={p.id} className="card py-3 px-4 border-brand-100 bg-brand-50">
+          <div key={p.id} className="card py-3 px-4 border-jfb-bordure bg-jfb-subtil">
             <div className="text-xl mb-1">{p.icon}</div>
-            <div className="text-xs font-semibold text-brand-800">{p.label}</div>
+            <div className="text-xs font-semibold text-jfb-noir">{p.label}</div>
             <div className="text-xs text-gray-600 mt-0.5">{p.description}</div>
           </div>
         ))}
@@ -192,8 +192,8 @@ export default function Module3_Sequence() {
                   onClick={() => toggleProfil(p.value)}
                   className={`flex items-center gap-2 p-2.5 rounded-lg border text-left text-xs transition-all ${
                     form.profils.includes(p.value)
-                      ? 'border-brand-500 bg-brand-50'
-                      : 'border-gray-200 hover:border-brand-200'
+                      ? 'border-jfb-rose bg-jfb-beige'
+                      : 'border-gray-200 hover:border-jfb-gris-cl'
                   }`}
                 >
                   <span>{p.icon}</span>
@@ -219,13 +219,13 @@ export default function Module3_Sequence() {
 
       {/* Résultat */}
       {resultat && (
-        <div className="card border-brand-200">
+        <div className="card border-jfb-bordure">
           <div className="flex items-center justify-between mb-4">
             <h2 className="font-semibold text-gray-800">Séquence générée</h2>
             <span className="text-xs text-gray-400 bg-gray-100 px-2 py-1 rounded-full">80% IA — à adapter</span>
           </div>
 
-          <div className="bg-brand-50 rounded-xl p-4 mb-4 text-sm text-gray-700 whitespace-pre-wrap leading-relaxed border border-brand-100">
+          <div className="bg-jfb-subtil rounded-xl p-4 mb-4 text-sm text-gray-700 whitespace-pre-wrap leading-relaxed border border-jfb-bordure">
             {resultat}
           </div>
 

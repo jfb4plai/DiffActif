@@ -103,7 +103,7 @@ export default function Module1_Profils() {
         <button
           onClick={() => setFilterProfil('')}
           className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${
-            filterProfil === '' ? 'bg-brand-600 text-white border-brand-600' : 'border-gray-300 text-gray-600 hover:border-brand-400'
+            filterProfil === '' ? 'bg-jfb-noir text-white border-jfb-noir' : 'border-gray-300 text-gray-600 hover:border-jfb-gris-cl'
           }`}
         >
           Tous ({eleves.length})
@@ -117,8 +117,8 @@ export default function Module1_Profils() {
               onClick={() => setFilterProfil(p.value)}
               className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${
                 filterProfil === p.value
-                  ? 'bg-brand-600 text-white border-brand-600'
-                  : 'border-gray-300 text-gray-600 hover:border-brand-400'
+                  ? 'bg-jfb-noir text-white border-jfb-noir'
+                  : 'border-gray-300 text-gray-600 hover:border-jfb-gris-cl'
               }`}
             >
               {p.icon} {p.label} ({count})
@@ -138,7 +138,7 @@ export default function Module1_Profils() {
               return (
                 <div key={p.value} className="text-center">
                   <div className="text-2xl">{p.icon}</div>
-                  <div className="text-lg font-bold text-brand-700">{count}</div>
+                  <div className="text-lg font-bold text-jfb-rose">{count}</div>
                   <div className="text-xs text-gray-500">{p.label.split('/')[0].trim()}</div>
                 </div>
               )
@@ -149,7 +149,7 @@ export default function Module1_Profils() {
 
       {/* Formulaire */}
       {showForm && (
-        <div className="card border-brand-200">
+        <div className="card border-jfb-bordure">
           <h3 className="font-semibold text-gray-800 mb-4">
             {editId ? 'Modifier l\'élève' : 'Nouvel élève'}
           </h3>
@@ -180,15 +180,15 @@ export default function Module1_Profils() {
                     key={p.value}
                     className={`flex items-center gap-2 p-3 rounded-lg border cursor-pointer transition-all ${
                       form.profils.includes(p.value)
-                        ? 'border-brand-500 bg-brand-50'
-                        : 'border-gray-200 hover:border-brand-200'
+                        ? 'border-jfb-rose bg-jfb-beige'
+                        : 'border-gray-200 hover:border-jfb-gris-cl'
                     }`}
                   >
                     <input
                       type="checkbox"
                       checked={form.profils.includes(p.value)}
                       onChange={() => toggleProfil(p.value)}
-                      className="accent-brand-600"
+                      className="accent-jfb-rose"
                     />
                     <span className="text-base">{p.icon}</span>
                     <span className="text-sm text-gray-700">{p.label}</span>
@@ -234,8 +234,8 @@ export default function Module1_Profils() {
               key={eleve.id}
               className="card py-3 px-4 flex items-start gap-4"
             >
-              <div className="w-10 h-10 bg-brand-100 rounded-xl flex items-center justify-center flex-shrink-0">
-                <span className="text-brand-700 text-xs font-bold">{eleve.code_anonyme.split('-')[1]}</span>
+              <div className="w-10 h-10 bg-jfb-beige rounded-xl flex items-center justify-center flex-shrink-0">
+                <span className="text-jfb-rose text-xs font-bold">{eleve.code_anonyme.split('-')[1]}</span>
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
@@ -259,7 +259,7 @@ export default function Module1_Profils() {
               <div className="flex gap-2 flex-shrink-0">
                 <button
                   onClick={() => openEdit(eleve)}
-                  className="text-xs text-brand-600 hover:underline"
+                  className="text-xs text-jfb-rose hover:underline"
                 >
                   Modifier
                 </button>

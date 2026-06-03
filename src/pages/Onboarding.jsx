@@ -39,21 +39,21 @@ export default function Onboarding() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-brand-50 to-brand-100 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-jfb-beige to-jfb-beige-dk flex items-center justify-center p-4">
       <div className="w-full max-w-lg">
         <div className="text-center mb-6">
           <div className="flex justify-center mb-3">
             <LogoPlai size="md" />
           </div>
-          <h1 className="text-2xl font-bold text-brand-900">Bienvenue dans DiffActif</h1>
-          <p className="text-brand-700 text-sm mt-1">Quelques infos pour personnaliser votre expérience</p>
+          <h1 className="text-2xl font-bold text-jfb-noir">Bienvenue dans DiffActif</h1>
+          <p className="text-jfb-rose text-sm mt-1">Quelques infos pour personnaliser votre expérience</p>
         </div>
 
         <div className="flex gap-2 mb-6">
           {[1, 2, 3].map(s => (
             <div
               key={s}
-              className={`h-1.5 flex-1 rounded-full transition-all ${s <= step ? 'bg-brand-500' : 'bg-gray-200'}`}
+              className={`h-1.5 flex-1 rounded-full transition-all ${s <= step ? 'bg-jfb-rose' : 'bg-gray-200'}`}
             />
           ))}
         </div>
@@ -118,15 +118,15 @@ export default function Onboarding() {
                     key={n.value}
                     className={`flex items-start gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all ${
                       form.niveau_maitrise === n.value
-                        ? 'border-brand-500 bg-brand-50'
-                        : 'border-gray-200 hover:border-brand-200'
+                        ? 'border-jfb-rose bg-jfb-beige'
+                        : 'border-gray-200 hover:border-jfb-gris-cl'
                     }`}
                   >
                     <input
                       type="radio" name="niveau_maitrise" value={n.value}
                       checked={form.niveau_maitrise === n.value}
                       onChange={e => update('niveau_maitrise', e.target.value)}
-                      className="mt-0.5 accent-brand-600"
+                      className="mt-0.5 accent-jfb-rose"
                     />
                     <div>
                       <div className="font-medium text-gray-800">{n.icon} {n.label}</div>

@@ -81,7 +81,7 @@ export default function Lire() {
     <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-start px-4 py-10">
       {/* En-tête PLAI */}
       <div className="mb-8 text-center">
-        <div className="w-12 h-12 bg-brand-600 rounded-2xl flex items-center justify-center mx-auto mb-3">
+        <div className="w-12 h-12 bg-jfb-noir rounded-2xl flex items-center justify-center mx-auto mb-3">
           <span className="text-white text-xl font-bold">DA</span>
         </div>
         <p className="text-xs text-gray-400">DiffActif — PLAI</p>
@@ -114,7 +114,7 @@ export default function Lire() {
                 type="range" min="0.5" max="1.5" step="0.05"
                 value={vitesse}
                 onChange={e => setVitesse(parseFloat(e.target.value))}
-                className="w-full accent-brand-600"
+                className="w-full accent-jfb-rose"
               />
             </div>
 
@@ -139,7 +139,7 @@ export default function Lire() {
               {!lecture ? (
                 <button
                   onClick={lire}
-                  className="flex-1 bg-brand-600 hover:bg-brand-700 text-white font-semibold py-3 rounded-xl text-sm transition-colors"
+                  className="flex-1 bg-jfb-noir hover:bg-jfb-noir-doux text-white font-semibold py-3 rounded-xl text-sm transition-colors"
                 >
                   Écouter
                 </button>
@@ -165,7 +165,7 @@ export default function Lire() {
             {lecture && (
               <button
                 onClick={lire}
-                className="w-full text-xs text-gray-400 hover:text-brand-600 underline"
+                className="w-full text-xs text-gray-400 hover:text-jfb-rose underline"
               >
                 Recommencer depuis le début
               </button>

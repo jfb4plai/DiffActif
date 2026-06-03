@@ -44,13 +44,13 @@ export default function References() {
       </div>
 
       {/* Badge corpus */}
-      <div className="card bg-brand-50 border-brand-200 flex items-center gap-4">
-        <div className="w-12 h-12 bg-brand-600 rounded-xl flex items-center justify-center flex-shrink-0">
+      <div className="card bg-jfb-beige border-jfb-bordure flex items-center gap-4">
+        <div className="w-12 h-12 bg-jfb-noir rounded-xl flex items-center justify-center flex-shrink-0">
           <span className="text-white text-xl">🔬</span>
         </div>
         <div>
-          <div className="font-semibold text-brand-900 text-sm">Corpus RISS</div>
-          <div className="text-xs text-brand-700">
+          <div className="font-semibold text-jfb-noir text-sm">Corpus RISS</div>
+          <div className="text-xs text-jfb-gris">
             522 627 articles scientifiques francophones — dyslexie, TDAH, inclusion, neurosciences de l'apprentissage, CUA
           </div>
         </div>
@@ -67,7 +67,7 @@ export default function References() {
               <div className="flex items-start justify-between gap-4 mb-3">
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-1 flex-wrap">
-                    <span className="badge bg-brand-100 text-brand-700">RISS ✓</span>
+                    <span className="badge bg-jfb-beige text-jfb-rose">RISS ✓</span>
                     <span className="badge bg-gray-100 text-gray-600">{ref.concept}</span>
                     <span className="text-xs text-gray-400">{ref.annee}</span>
                   </div>
@@ -78,7 +78,7 @@ export default function References() {
                   )}
                 </div>
                 <div className="flex-shrink-0 text-right">
-                  <div className="font-mono text-xs text-brand-600 bg-brand-50 px-2 py-1 rounded">
+                  <div className="font-mono text-xs text-jfb-rose bg-jfb-subtil px-2 py-1 rounded">
                     {ref.riss_id}
                   </div>
                 </div>
@@ -93,7 +93,7 @@ export default function References() {
                   <div className="space-y-1.5">
                     {ref.utilisation.map((u, i) => (
                       <div key={i} className="flex items-start gap-2">
-                        <span className="badge bg-brand-50 text-brand-700 flex-shrink-0 mt-0.5">
+                        <span className="badge bg-jfb-subtil text-jfb-rose flex-shrink-0 mt-0.5">
                           {u.module}
                         </span>
                         <span className="text-xs text-gray-600">{u.detail}</span>
