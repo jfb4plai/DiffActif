@@ -133,7 +133,7 @@ export default function Module4_Bibliotheque() {
 
   async function loadContributions() {
     const { data } = await supabase
-      .from('exemples_bibliotheque')
+      .from('diff_exemples_bibliotheque')
       .select('*')
       .order('created_at', { ascending: false })
     setContributions(data ?? [])
@@ -142,7 +142,7 @@ export default function Module4_Bibliotheque() {
   async function soumettre() {
     if (!form.titre.trim() || !form.adaptation.trim()) return
     setSaving(true)
-    await supabase.from('exemples_bibliotheque').insert({
+    await supabase.from('diff_exemples_bibliotheque').insert({
       user_id:     user.id,
       titre:       form.titre,
       matiere:     form.matiere,
@@ -162,7 +162,7 @@ export default function Module4_Bibliotheque() {
   }
 
   async function supprimer(id) {
-    await supabase.from('exemples_bibliotheque').delete().eq('id', id)
+    await supabase.from('diff_exemples_bibliotheque').delete().eq('id', id)
     setContributions(prev => prev.filter(c => c.id !== id))
   }
 

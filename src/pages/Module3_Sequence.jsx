@@ -89,7 +89,7 @@ export default function Module3_Sequence() {
 
   async function sauvegarder() {
     setSaving(true)
-    await supabase.from('sequences').insert({
+    await supabase.from('diff_sequences').insert({
       user_id:           user.id,
       titre:             form.titre,
       matiere:           form.matiere,

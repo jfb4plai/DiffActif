@@ -166,7 +166,7 @@ export default function Module2_Adapter() {
   useEffect(() => {
     if (!user) return
     supabase
-      .from('adaptations')
+      .from('diff_adaptations')
       .select('texte_final')
       .eq('user_id', user.id)
       .not('texte_final', 'is', null)
@@ -377,7 +377,7 @@ export default function Module2_Adapter() {
 
   async function sauvegarder() {
     setSaving(true)
-    const { data } = await supabase.from('adaptations').insert({
+    const { data } = await supabase.from('diff_adaptations').insert({
       user_id:           user.id,
       activite_originale: activite,
       objectif,
@@ -397,7 +397,7 @@ export default function Module2_Adapter() {
   async function envoyerFeedback(valeur) {
     if (!savedId) return
     setFeedback(valeur)
-    await supabase.from('adaptations').update({ feedback: valeur }).eq('id', savedId)
+    await supabase.from('diff_adaptations').update({ feedback: valeur }).eq('id', savedId)
   }
 
   const canGenerate = activite.trim().length > 20 && profilsChoisis.length > 0

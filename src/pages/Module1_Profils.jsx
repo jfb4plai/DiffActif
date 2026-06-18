@@ -23,7 +23,7 @@ export default function Module1_Profils() {
 
   async function loadEleves() {
     const { data } = await supabase
-      .from('eleves')
+      .from('diff_eleves')
       .select('*')
       .order('created_at', { ascending: false })
     setEleves(data ?? [])
@@ -54,13 +54,13 @@ export default function Module1_Profils() {
   async function handleSave() {
     setSaving(true)
     if (editId) {
-      await supabase.from('eleves').update({
+      await supabase.from('diff_eleves').update({
         code_anonyme: form.code_anonyme,
         profils: form.profils,
         notes: form.notes,
       }).eq('id', editId)
     } else {
-      await supabase.from('eleves').insert({
+      await supabase.from('diff_eleves').insert({
         user_id: user.id,
         code_anonyme: form.code_anonyme,
         profils: form.profils,
@@ -74,7 +74,7 @@ export default function Module1_Profils() {
 
   async function handleDelete(id) {
     if (!confirm('Supprimer cet élève ?')) return
-    await supabase.from('eleves').delete().eq('id', id)
+    await supabase.from('diff_eleves').delete().eq('id', id)
     setEleves(prev => prev.filter(e => e.id !== id))
   }
 

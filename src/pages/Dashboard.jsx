@@ -19,9 +19,9 @@ export default function Dashboard() {
       { data: adaptations },
       { data: sequences },
     ] = await Promise.all([
-      supabase.from('eleves').select('id').limit(200),
-      supabase.from('adaptations').select('*').order('created_at', { ascending: false }).limit(5),
-      supabase.from('sequences').select('id').limit(200),
+      supabase.from('diff_eleves').select('id').limit(200),
+      supabase.from('diff_adaptations').select('*').order('created_at', { ascending: false }).limit(5),
+      supabase.from('diff_sequences').select('id').limit(200),
     ])
 
     setStats({
@@ -81,7 +81,7 @@ export default function Dashboard() {
       <div className="grid grid-cols-3 gap-4">
         {[
           { label: 'Élèves (codes)', value: stats.eleves,      icon: '👥', color: 'text-purple-600' },
-          { label: 'Adaptations',    value: stats.adaptations, icon: '✨', color: 'text-jfb-rose' },
+          { label: 'diff_adaptations',    value: stats.adaptations, icon: '✨', color: 'text-jfb-rose' },
           { label: 'Séquences',      value: stats.sequences,   icon: '📋', color: 'text-jfb-rose' },
         ].map(s => (
           <div key={s.label} className="card py-4">

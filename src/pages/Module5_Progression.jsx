@@ -77,7 +77,7 @@ export default function Module5_Progression() {
 
   async function loadStatsAdaptations() {
     const { data } = await supabase
-      .from('adaptations')
+      .from('diff_adaptations')
       .select('profils, matiere, created_at, feedback')
       .order('created_at', { ascending: false })
       .limit(200)
@@ -96,7 +96,7 @@ export default function Module5_Progression() {
 
   async function loadHistorique() {
     const { data } = await supabase
-      .from('progressions')
+      .from('diff_progressions')
       .select('*')
       .order('created_at', { ascending: false })
       .limit(10)
@@ -116,7 +116,7 @@ export default function Module5_Progression() {
 
   async function sauvegarder() {
     setSaving(true)
-    await supabase.from('progressions').insert({
+    await supabase.from('diff_progressions').insert({
       user_id:    user.id,
       scores,
       commentaire,
