@@ -506,6 +506,19 @@ function isDecorativeLine(line) {
   return /^[.\-_…]{3,}$/.test(line.trim())
 }
 
+// Regarde en avant (jusqu'à 2 lignes vides) pour détecter du contenu
+// qui doit rester collé à la ligne courante (espaces-réponse, pictos).
+// Permet de propager keepNext même quand l'IA insère une ligne vide parasite.
+function hasAuContentAhead(lines, i) {
+  let blanks = 0
+  for (let j = i + 1; j < Math.min(i + 8, lines.length); j++) {
+    const t = lines[j].trim()
+    if (!t) { if (++blanks > 2) return false; continue }
+    return /^(_{5,}|\.{5,}|«BLANC_\d+»|\[picto:)/i.test(t)
+  }
+  return false
+}
+
 // Détecte une ligne contenant UNIQUEMENT des marqueurs [picto: mot] (et séparateurs |)
 function isPictoOnlyLine(line) {
   const stripped = line.replace(/\[picto:\s*[^\]]+\]/gi, '').replace(/[\|\s]/g, '')
@@ -654,7 +667,13 @@ function parseAuText(text, pictoMap = {}, withVerbPictos = false, consigneQrMap 
   for (let i = 0; i < lines.length; i++) {
     const trimmed = lines[i].trim()
 
-    if (!trimmed) { paragraphs.push(spacer(lastWasTitle)); continue }
+    if (!trimmed) {
+      const ahead = hasAuContentAhead(lines, i)
+      paragraphs.push(ahead
+        ? new Paragraph({ text: '', spacing: { after: 200 }, keepNext: true })
+        : spacer(lastWasTitle))
+      continue
+    }
 
     // Ligne décorative → ignorée
     if (isDecorativeLine(trimmed)) { lastWasTitle = false; continue }
@@ -773,7 +792,7 @@ function parseAdaptations(text) {
       }))
     } else {
       paragraphs.push(new Paragraph({
-        children: [new TextRun({ text: trimmed })],
+        children: renderInline(trimmed, {}),
         spacing: { after: 80 },
         indent: { left: 360 },
         keepLines: true,
