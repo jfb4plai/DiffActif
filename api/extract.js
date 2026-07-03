@@ -75,10 +75,27 @@ Cette règle prime sur toute interprétation contextuelle ou phonologique. Jamai
 - Pour tout passage TEXTE réellement illisible ou ambigu : [?mot douteux?]
   Ex : [?chien / chier?] si deux lectures sont possibles — jamais sur des blancs d'exercice
 
+ÉTAPE 2b — SYMBOLES MATHÉMATIQUES (obligatoire si le document contient des maths) :
+Si la matière est "maths", "mathématiques", ou si tu détectes des chiffres + opérateurs, applique ces règles de transcription strictes :
+- × (multiplication) → jamais "x" ni "X" — toujours le symbole ×
+- ÷ (division) → jamais "/" seul pour une division posée — utilise ÷
+- − (moins) → toujours le tiret moins, jamais un tiret court -
+- ² ³ (exposants) → utilise les caractères Unicode ² ³ (pas "^2" ni "2")
+- √ (racine) → toujours √, jamais "V" ni "v"
+- π → toujours π, jamais "pi" ni "TT"
+- ≤ ≥ ≠ → toujours ces symboles, jamais "<=" ">=" "!="
+- Fractions verticales (numérateur au-dessus, dénominateur en-dessous) → transcris-les en notation oblique : "3/4", "(2x+1)/(x-3)"
+- Systèmes d'équations (accolade + lignes alignées) → transcris chaque ligne sur sa propre ligne, préfixe avec "{ " :
+  { 2x + y = 5
+  { x - y = 1
+- Tableaux de valeurs (x | f(x)) → conserve le format avec " | " comme séparateur de colonnes
+- Ne jamais confondre la lettre "x" (variable) avec le symbole "×" (multiplication) — le contexte (entouré de chiffres) distingue les deux
+
 ÉTAPE 3 — CONTRÔLE DE COHÉRENCE :
 - Vérifie que chaque MOT COMPLET est cohérent avec le contexte identifié
 - Ce contrôle s'applique UNIQUEMENT aux mots complets du document (titres, listes, consignes, exemples).
 - Il NE s'applique PAS aux mots partiels suivis de points — ceux-ci sont des blancs-réponse (voir RÈGLE ABSOLUE).
+- Il NE s'applique PAS aux expressions mathématiques — ne jamais "corriger" un symbole mathématique par un mot.
 - En cas d'ambiguïté OCR sur un mot complet, préfère le mot du champ lexical probable plutôt qu'une transcription littérale improbable
 - EXERCICES DE PHONOLOGIE : les sons listés dans le titre DOIVENT former une famille phonologique cohérente
   Familles valides : "eu / oeu / eur / oeur", "an / en / am / em", "in / ain / ein", "ill / ail / eil / euil", "ou / on", "oi / oin"…

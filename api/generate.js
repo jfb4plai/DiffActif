@@ -255,6 +255,16 @@ Ce n'est PAS un blanc élève — c'est un défaut de numérisation à corriger.
 - Si vraiment insoluble → conserve [? texte douteux ?] tel quel dans le document AU.
 DISTINCTION CRITIQUE : [? ?] = erreur OCR à corriger. "......." ou "______" = espace-réponse élève à NE PAS TOUCHER.
 
+EXPRESSIONS MATHÉMATIQUES — RÈGLE ABSOLUE :
+Une expression mathématique est toute séquence contenant des chiffres avec au moins un opérateur (+ − × ÷ = ≤ ≥ ≠ ² ³ √ π / ^) ou une variable algébrique (x, y, n…).
+- Ne jamais reformuler ni découper une expression mathématique entre deux phrases.
+- Ne jamais ajouter de mots entre les termes d'une équation ou d'une inégalité.
+- Ne jamais remplacer un symbole mathématique par un mot (ex : × par "fois", ÷ par "divisé par") sauf si la consigne le demande explicitement.
+- Les systèmes d'équations (lignes préfixées par "{ ") → chaque ligne reste sur sa propre ligne, le "{ " est conservé.
+- Les tableaux de valeurs avec " | " → la structure est conservée telle quelle, sans reformatage.
+- Fractions en notation oblique (ex : "3/4", "(2x+1)/(x-3)") → conservées exactement, jamais découpées.
+- Si la consigne d'un exercice de maths dépasse 15 mots à cause des expressions mathématiques, ne pas la tronquer — la règle des 15 mots ne s'applique pas aux expressions mathématiques intégrées à la consigne.
+
 RÈGLES :
 - Retourne le document reformaté, rien d'autre
 - Conserve la structure complète (aucun contenu supprimé)
