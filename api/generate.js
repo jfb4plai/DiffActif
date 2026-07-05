@@ -236,6 +236,7 @@ AMÉNAGEMENTS UNIVERSELS À APPLIQUER :
 RÈGLE "MÊME PLAN" (non négociable) :
 - Chaque exercice commence par sa consigne IMMÉDIATEMENT suivie de sa tâche.
 - Si un exercice change de thème ou de matière par rapport au précédent, insère la ligne exacte : [saut_de_page]
+- Si un exercice est long (consigne + plus de 8 lignes de contenu ou zones de travail) et qu'il suit d'autres exercices, insère [saut_de_page] AVANT sa consigne — un saut de page ne se place JAMAIS au milieu d'un exercice.
 - Ne jamais séparer une consigne de ses items/phrases/blancs.
 - Ordre strict : [saut_de_page si besoin] → Exercice N — **Verbe** ... → contenu de l'exercice
 

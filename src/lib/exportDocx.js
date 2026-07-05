@@ -6,7 +6,7 @@
 import {
   Document, Packer, Paragraph, TextRun, HeadingLevel,
   AlignmentType, BorderStyle, Table, TableRow, TableCell,
-  WidthType, ShadingType, Header, PageNumber, ImageRun,
+  WidthType, ShadingType, Header, Footer, PageNumber, ImageRun,
 } from 'docx'
 import { saveAs } from 'file-saver'
 import QRCode from 'qrcode'
@@ -230,6 +230,25 @@ function sectionTitle(text) {
   })
 }
 
+// Pied de page « Page X / Y » — AU : pages numérotées, l'élève garde
+// les mêmes repères de pagination que le reste de la classe (Même Plan).
+function pageFooter() {
+  return {
+    default: new Footer({
+      children: [new Paragraph({
+        alignment: AlignmentType.CENTER,
+        spacing: { line: 240 },
+        children: [
+          new TextRun({ text: 'Page ', size: 18, color: GRAY_TEXT }),
+          new TextRun({ children: [PageNumber.CURRENT], size: 18, color: GRAY_TEXT }),
+          new TextRun({ text: ' / ', size: 18, color: GRAY_TEXT }),
+          new TextRun({ children: [PageNumber.TOTAL_PAGES], size: 18, color: GRAY_TEXT }),
+        ],
+      })],
+    }),
+  }
+}
+
 function metaTable(rows) {
   return [
     new Table({
@@ -321,6 +340,7 @@ export async function exportUniverselDocx({ auTexte, matiere, niveau, typeEnseig
           })],
         }),
       },
+      footers: pageFooter(),
       children: [
         new Paragraph({
           text: matiere ? `${matiere} — Aménagements Universels` : 'Document — Aménagements Universels',
@@ -468,6 +488,7 @@ export async function exportProfilDocx({
           })],
         }),
       },
+      footers: pageFooter(),
       children,
     }],
   })
@@ -501,9 +522,16 @@ function isPageBreakMarker(line) {
     || /^PAGE\s+([2-9]|\d{2,})$/i.test(line.trim())
 }
 
-// Détecte une ligne purement décorative (points, tirets, underscores répétés ≥ 3)
+// Détecte une ligne purement décorative (tirets, étoiles, égals répétés ≥ 3).
+// Les lignes de points ou d'underscores n'en font PAS partie : ce sont des
+// zones de travail élève (espaces-réponse) — les jeter casserait le Même Plan.
 function isDecorativeLine(line) {
-  return /^[.\-_…]{3,}$/.test(line.trim())
+  return /^[-—–*=]{3,}$/.test(line.trim())
+}
+
+// Ligne "zone de travail" : underscores, points ou … seuls (espace-réponse élève)
+function isWorkZoneLine(line) {
+  return /^[_.…]{3,}$/.test(line.trim())
 }
 
 // Regarde en avant (jusqu'à 2 lignes vides) pour détecter du contenu
@@ -677,6 +705,23 @@ function parseAuText(text, pictoMap = {}, withVerbPictos = false, consigneQrMap 
 
     // Ligne décorative → ignorée
     if (isDecorativeLine(trimmed)) { lastWasTitle = false; continue }
+
+    // Zone de travail (___ / ......) : keepNext seulement si la ligne suivante
+    // est aussi une zone de travail — la dernière rompt la chaîne. Word peut
+    // ainsi paginer ENTRE exercices, jamais entre un énoncé et sa zone de
+    // travail (règle Même Plan, portée de MathActif).
+    if (isWorkZoneLine(trimmed)) {
+      lastWasTitle = false
+      lastWasPageBreak = false
+      const nextIsWorkZone = i + 1 < lines.length && isWorkZoneLine(lines[i + 1])
+      paragraphs.push(new Paragraph({
+        children: [new TextRun({ text: trimmed })],
+        spacing: { after: 100, line: 360, lineRule: 'auto' },
+        keepLines: true,
+        keepNext: nextIsWorkZone,
+      }))
+      continue
+    }
 
     if (isPageBreakMarker(trimmed)) {
       if (!lastWasPageBreak) {
