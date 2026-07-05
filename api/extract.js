@@ -9,10 +9,15 @@
  *  2. Claude texte → vérifie la cohérence, corrige/signale les passages suspects
  */
 
+import { requireUser } from './_auth.js'
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Méthode non autorisée' })
   }
+
+  const user = await requireUser(req, res)
+  if (!user) return
 
   const { images } = req.body
   if (!images || !Array.isArray(images) || images.length === 0) {

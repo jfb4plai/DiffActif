@@ -7,6 +7,7 @@
 
 import * as pdfjsLib from 'pdfjs-dist'
 import PDFWorker from 'pdfjs-dist/build/pdf.worker.min.mjs?url'
+import { apiFetch } from './apiFetch'
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = PDFWorker
 
@@ -66,11 +67,7 @@ export async function extractFile(file) {
 
     // Toujours passer par Claude Vision pour la meilleure qualité
     const images = await renderPagesToBase64(pdf)
-    const res = await fetch('/api/extract', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ images }),
-    })
+    const res = await apiFetch('/api/extract', { images })
     const data = await res.json()
     if (!res.ok) throw new Error(data.error ?? 'Erreur OCR')
     return { text: data.text, hasDoutes: data.hasDoutes, nbDoutes: data.nbDoutes ?? 0, pageWarning }
@@ -87,11 +84,7 @@ export async function extractFile(file) {
 
   if (['jpg', 'jpeg', 'png', 'webp'].includes(ext)) {
     const base64 = await imageFileToBase64Jpeg(file)
-    const res = await fetch('/api/extract', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ images: [base64] }),
-    })
+    const res = await apiFetch('/api/extract', { images: [base64] })
     const data = await res.json()
     if (!res.ok) throw new Error(data.error ?? 'Erreur OCR')
     return { text: data.text, hasDoutes: data.hasDoutes, nbDoutes: data.nbDoutes ?? 0 }

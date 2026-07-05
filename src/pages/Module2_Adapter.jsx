@@ -6,6 +6,7 @@ import { PROFILS, NIVEAUX, TYPES_ENSEIGNEMENT } from '../lib/constants'
 import { exportAdaptationsDocx, exportUniverselDocx, exportProfilDocx } from '../lib/exportDocx'
 import { extractFile } from '../lib/extractFile'
 import { fetchPictosForText } from '../lib/arasaac'
+import { apiFetch } from '../lib/apiFetch'
 
 // ── Protection des blancs-réponse élève ──────────────────────
 // Remplace ..... et _____ par des tokens avant envoi à l'IA,
@@ -242,13 +243,9 @@ export default function Module2_Adapter() {
     setGeneratingAu(true)
     try {
       const { protected: activiteProtected, map: blanksMap } = protectBlanks(activite)
-      const res = await fetch('/api/generate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: 'appliquer_au',
-          context: { activite: activiteProtected, matiere, niveau, type_enseignement: typeEns },
-        }),
+      const res = await apiFetch('/api/generate', {
+        action: 'appliquer_au',
+        context: { activite: activiteProtected, matiere, niveau, type_enseignement: typeEns },
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error ?? 'Erreur serveur')
@@ -293,13 +290,9 @@ export default function Module2_Adapter() {
     try {
       const baseText = auTexte || activite
       const { protected: baseProtected, map: blanksMap } = protectBlanks(baseText)
-      const res = await fetch('/api/generate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: 'adapter_activite',
-          context: { activite: baseProtected, objectif, profils: profilsChoisis, niveau, type_enseignement: typeEns, matiere, au_texte: auTexte ? baseProtected : null, historique_enseignant: histoAdaptations.length ? histoAdaptations : undefined },
-        }),
+      const res = await apiFetch('/api/generate', {
+        action: 'adapter_activite',
+        context: { activite: baseProtected, objectif, profils: profilsChoisis, niveau, type_enseignement: typeEns, matiere, au_texte: auTexte ? baseProtected : null, historique_enseignant: histoAdaptations.length ? histoAdaptations : undefined },
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error ?? 'Erreur serveur')
@@ -352,19 +345,15 @@ export default function Module2_Adapter() {
     setVerifying(profil)
     try {
       const profilLabel = PROFILS.find(p => p.value === profil)?.label ?? profil
-      const res = await fetch('/api/generate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: 'verifier_exercice',
-          context: {
-            profil: profilLabel,
-            exercice_adapte: auTexte,
-            niveau,
-            type_enseignement: typeEns,
-            matiere,
-          },
-        }),
+      const res = await apiFetch('/api/generate', {
+        action: 'verifier_exercice',
+        context: {
+          profil: profilLabel,
+          exercice_adapte: auTexte,
+          niveau,
+          type_enseignement: typeEns,
+          matiere,
+        },
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error ?? 'Erreur serveur')

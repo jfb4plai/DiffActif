@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabase'
 import { useAuth } from '../contexts/AuthContext'
 import { PROFILS, NIVEAUX, TYPES_ENSEIGNEMENT, PRINCIPES_CUA } from '../lib/constants'
 import { exportSequenceDocx } from '../lib/exportDocx'
+import { apiFetch } from '../lib/apiFetch'
 
 export default function Module3_Sequence() {
   const { user, profile } = useAuth()
@@ -54,13 +55,9 @@ export default function Module3_Sequence() {
     setTexteFinal('')
 
     try {
-      const res = await fetch('/api/generate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: 'creer_sequence',
-          context: { titre: form.titre, matiere: form.matiere, niveau: form.niveau, type_enseignement: form.type_enseignement, objectif: form.objectif, nb_seances: form.nb_seances, profils: form.profils },
-        }),
+      const res = await apiFetch('/api/generate', {
+        action: 'creer_sequence',
+        context: { titre: form.titre, matiere: form.matiere, niveau: form.niveau, type_enseignement: form.type_enseignement, objectif: form.objectif, nb_seances: form.nb_seances, profils: form.profils },
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error ?? 'Erreur serveur')
