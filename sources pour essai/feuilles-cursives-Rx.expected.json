@@ -1,6 +1,6 @@
 {
   "_source": "feuilles cursives Rx.pdf",
-  "_note": "Transcription de référence, relevée à la main sur le scan. Sert de vérité terrain : l'extraction OCR est comparée à ce fichier, jamais l'inverse.",
+  "_note": "Transcription de référence, relevée à la main sur le scan. Sert de vérité terrain : l'extraction est comparée à ce fichier, jamais l'inverse. Deux corrections apportées par la logique interne de l'exercice (les sons à ajouter sont eu/oeu/eur/oeur) : l'amorce \"l'h\" porte bien un suffixe \"e\" (l'h+eur+e = l'heure), et \"un pn\" est correct (pn+eu = pneu, \"preu\" n'existe pas). Ce raisonnement est volontairement ABSENT du pipeline : y déduire le mot attendu revient à compléter la réponse de l'élève.", "_a_verifier": "L'amorce \"ll\" (colonne 2, ligne 3) n'est lisible avec certitude ni par l'humain ni par la machine. Aucun mot français ne commence par \"ll\" : lectures plausibles fl (fleur), bl (bleur ?), pl (pleur). À trancher sur le document papier.",
   "sections": [
     {
       "titre": "Le son « eu » – « oeu » – « eur » – « oeur »",
@@ -22,7 +22,7 @@
             { "texte": "", "amorce": "un b", "suffixe": "f", "avant": "", "apres": "", "choix": [], "dessin": false },
             { "texte": "", "amorce": "ll", "suffixe": "", "avant": "", "apres": "", "choix": [], "dessin": false },
             { "texte": "", "amorce": "un vi", "suffixe": "x", "avant": "", "apres": "", "choix": [], "dessin": false },
-            { "texte": "", "amorce": "l'h", "suffixe": "", "avant": "", "apres": "", "choix": [], "dessin": false },
+            { "texte": "", "amorce": "l'h", "suffixe": "e", "avant": "", "apres": "", "choix": [], "dessin": false },
             { "texte": "", "amorce": "un c", "suffixe": "", "avant": "", "apres": "", "choix": [], "dessin": false },
             { "texte": "", "amorce": "un doct", "suffixe": "", "avant": "", "apres": "", "choix": [], "dessin": false }
           ]

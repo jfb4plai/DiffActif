@@ -771,7 +771,8 @@ export default function Module2_Adapter() {
                         <div key={cle} className="px-4 py-3">
                           <p className="text-xs text-gray-500 mb-2">
                             Exercice {ei + 1}{sec.titre ? ` — ${sec.titre}` : ''}
-                            {sec.grapheme ? ` · son « ${sec.grapheme} »` : ''}
+                            {/* Le titre porte déjà le son la plupart du temps : ne le répéter que s'il manque. */}
+                            {sec.grapheme && !sec.titre?.includes(sec.grapheme) ? ` · son « ${sec.grapheme} »` : ''}
                           </p>
                           <div className="flex flex-wrap gap-3">
                             {ex.items.map((it, ii) => (
