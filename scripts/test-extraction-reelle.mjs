@@ -52,13 +52,23 @@ const anomalies = validerDoc(doc)
 console.log(anomalies.length ? 'Anomalies :\n  ' + anomalies.join('\n  ') + '\n' : 'Aucune anomalie structurelle.\n')
 
 // ── Comparaison à la référence ─────────────────────────────────────────
-const applatir = d => (d.sections ?? []).flatMap((s, si) =>
-  (s.exercices ?? []).flatMap((e, ei) =>
-    (e.items ?? []).map((it, ii) => [
+// Tout ce qui figure sur la feuille est comparé, pas seulement les items :
+// un titre faux (« ou » au lieu de « eu ») rend l'exercice entier absurde et
+// passait inaperçu quand seuls les items étaient contrôlés.
+const applatir = d => (d.sections ?? []).flatMap((s, si) => [
+  [`${si} titre`, 'section', JSON.stringify(s.titre)],
+  [`${si} graphème`, 'section', JSON.stringify(s.grapheme)],
+  ...(s.exercices ?? []).flatMap((e, ei) => [
+    [`${si}.${ei} consigne`, 'exercice', JSON.stringify(e.consigne)],
+    [`${si}.${ei} format`, 'exercice', JSON.stringify([e.type, e.disposition, e.colonnes])],
+    [`${si}.${ei} banque`, 'exercice', JSON.stringify(e.banque)],
+    ...(e.items ?? []).map((it, ii) => [
       `${si}.${ei}.${ii}`,
       e.type,
       JSON.stringify([it.texte, it.amorce, it.suffixe, it.avant, it.apres, it.choix]),
-    ])))
+    ]),
+  ]),
+])
 
 const refItems = applatir(ref)
 const gotItems = applatir(doc)
@@ -74,8 +84,8 @@ for (const [k, type, attendu] of refItems) {
 
 const score = refItems.length ? (100 * justes / refItems.length) : 0
 console.log(`Structure : ${doc.sections?.length ?? 0} section(s) / ${ref.sections.length} attendues`)
-console.log(`Items     : ${gotItems.length} lus / ${refItems.length} attendus`)
-console.log(`Fidélité  : ${justes}/${refItems.length} items identiques (${score.toFixed(1)} %)\n`)
+console.log(`Champs    : ${gotItems.length} lus / ${refItems.length} attendus`)
+console.log(`Fidélité  : ${justes}/${refItems.length} champs identiques (${score.toFixed(1)} %)\n`)
 if (ecarts.length) console.log('Écarts :\n' + ecarts.join('\n'))
 
 // ── Régressions nommées ────────────────────────────────────────────────

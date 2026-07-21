@@ -94,15 +94,35 @@ export function normaliserDoc(doc) {
   // devant ! ? ; : — d'où la restriction à . et , uniquement).
   const ponctuation = s => String(s ?? '').replace(/^[ \t]+([.,])/, '$1')
 
+  // Ligature œ. Liste fermée : "oeu" n'est pas toujours "œu" (moelle, poêle),
+  // donc on ne remplace que dans des mots dont l'orthographe est certaine.
+  const LIGATURES = [
+    'oeuf', 'oeufs', 'boeuf', 'boeufs', 'coeur', 'coeurs', 'soeur', 'soeurs',
+    'noeud', 'noeuds', 'voeu', 'voeux', 'oeuvre', 'oeuvres', 'manoeuvre', 'manoeuvres',
+    'oeil', 'oeillet', 'oeillets', 'choeur', 'choeurs', 'moeurs', 'oesophage',
+  ]
+  // Tiret de séparation entre graphies : demi-cadratin, pas trait d'union.
+  // Un tiret ENTOURÉ D'ESPACES n'est jamais un mot composé — remplacement sûr.
+  const tiret = s => String(s ?? '').replace(/ +- +/g, ' – ')
+
+  const RE_LIGATURE = new RegExp(`\\b(${LIGATURES.join('|')})\\b`, 'gi')
+  const ligature = s => String(s ?? '').replace(RE_LIGATURE, m => {
+    const remplace = m.replace(/oe/i, m.startsWith('O') ? 'Œ' : 'œ')
+    return remplace
+  })
+
   for (const sec of doc?.sections ?? []) {
+    sec.titre = tiret(ligature(espaces(sec.titre).trim()))
     for (const ex of sec.exercices ?? []) {
-      ex.consigne = espaces(ex.consigne).trim()
+      ex.consigne = tiret(ligature(espaces(ex.consigne).trim()))
+      ex.banque = (ex.banque ?? []).map(m => ligature(espaces(m).trim()))
       for (const it of ex.items ?? []) {
-        it.avant   = finApostrophe(espaces(it.avant))
+        it.avant   = ligature(finApostrophe(espaces(it.avant)))
         it.amorce  = finApostrophe(espaces(it.amorce))
-        it.apres   = ponctuation(espaces(it.apres))
+        it.apres   = ligature(ponctuation(espaces(it.apres)))
         it.suffixe = espaces(it.suffixe)
-        it.texte   = espaces(it.texte).trim()
+        it.texte   = ligature(espaces(it.texte).trim())
+        it.choix   = (it.choix ?? []).map(c => ligature(espaces(c).trim()))
       }
     }
   }

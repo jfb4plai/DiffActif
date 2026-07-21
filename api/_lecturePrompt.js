@@ -23,10 +23,26 @@ EXERCICES À CHOIX :
 - Deux options identiques sont toujours une erreur de lecture de ta part — relis.
 
 MOTS COMPLETS (listes, titres, banques de mots) :
-- Transcris exactement ce que tu lis. En cursive, "e" et "o" se confondent, "r" disparaît.
-- Si le document traite un son (indiqué dans le titre), chaque mot d'une liste de lecture
-  doit contenir ce son. Un mot qui ne le contient pas signale une mauvaise lecture : relis-le.
-  Ex : sur une feuille « ill », "ville" est douteux — "vrille" est probablement le mot.
+- Transcris exactement ce que tu lis. En cursive, "e" et "o" se confondent, "r" disparaît,
+  "n" et "r" se ressemblent en fin de syllabe.
+- Utilise la ligature œ quand le mot s'écrit avec : œuf, bœuf, cœur, sœur, nœud, vœu, œil, chœur.
+
+FAMILLE PHONOLOGIQUE — contrôle obligatoire sur le titre et les consignes :
+- Le titre d'une feuille de phonologie annonce une famille de graphies d'UN MÊME SON.
+  Familles valides : « eu / oeu / eur / oeur » · « ou / oue » · « an / en / am / em »
+  · « in / ain / ein » · « on / om » · « oi / oin » · « ill / aill / euil / ouill ».
+- « ou – oeu – our – oeur » n'est PAS une famille : "ou" (/u/) et "oeu" (/œ/) sont deux sons
+  différents. En cursive le "e" de "eu" se lit facilement "o" : la famille est « eu – oeu – eur – oeur ».
+- Avant de valider un titre ou une consigne, vérifie que toutes les graphies notent le même son.
+  Si l'une détonne, c'est ta lecture qui est fautive, pas le document.
+- Le champ "grapheme" doit appartenir à la famille du titre.
+
+PIÈGES DE LECTURE (le son prime sur les lettres) :
+- Sur une feuille « ill » (son /ij/ comme dans "fille"), les mots "ville", "mille", "tranquille"
+  se prononcent /il/ : ils n'appartiennent PAS à la liste et signalent une mauvaise lecture.
+  Un "v" suivi de ce qui ressemble à "ille" est presque toujours "vrille" — le "r" cursif s'efface.
+- Plus généralement : un mot d'une liste de lecture qui ne se PRONONCE pas avec le son travaillé
+  est une erreur de transcription. Relis-le avant de le valider.
 
 STRUCTURE :
 - Une "section" = une feuille ou un thème (un nouveau titre = une nouvelle section).
