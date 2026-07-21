@@ -1,0 +1,136 @@
+{
+  "_source": "feuilles cursives Rx.pdf",
+  "_note": "Transcription de référence, relevée à la main sur le scan. Sert de vérité terrain : l'extraction OCR est comparée à ce fichier, jamais l'inverse.",
+  "sections": [
+    {
+      "titre": "Le son « eu » – « oeu » – « eur » – « oeur »",
+      "grapheme": "eu",
+      "exercices": [
+        {
+          "consigne": "Ajoute « eu » – « oeu » – « eur » – « oeur ».",
+          "type": "amorces",
+          "disposition": "colonnes",
+          "colonnes": 3,
+          "banque": [],
+          "items": [
+            { "texte": "", "amorce": "un j", "suffixe": "", "avant": "", "apres": "", "choix": [], "dessin": false },
+            { "texte": "", "amorce": "j", "suffixe": "di", "avant": "", "apres": "", "choix": [], "dessin": false },
+            { "texte": "", "amorce": "un pn", "suffixe": "", "avant": "", "apres": "", "choix": [], "dessin": false },
+            { "texte": "", "amorce": "ma s", "suffixe": "", "avant": "", "apres": "", "choix": [], "dessin": false },
+            { "texte": "", "amorce": "un fact", "suffixe": "", "avant": "", "apres": "", "choix": [], "dessin": false },
+            { "texte": "", "amorce": "un n", "suffixe": "d", "avant": "", "apres": "", "choix": [], "dessin": false },
+            { "texte": "", "amorce": "un b", "suffixe": "f", "avant": "", "apres": "", "choix": [], "dessin": false },
+            { "texte": "", "amorce": "ll", "suffixe": "", "avant": "", "apres": "", "choix": [], "dessin": false },
+            { "texte": "", "amorce": "un vi", "suffixe": "x", "avant": "", "apres": "", "choix": [], "dessin": false },
+            { "texte": "", "amorce": "l'h", "suffixe": "", "avant": "", "apres": "", "choix": [], "dessin": false },
+            { "texte": "", "amorce": "un c", "suffixe": "", "avant": "", "apres": "", "choix": [], "dessin": false },
+            { "texte": "", "amorce": "un doct", "suffixe": "", "avant": "", "apres": "", "choix": [], "dessin": false }
+          ]
+        },
+        {
+          "consigne": "Complète avec les mots de cette liste. Attention, il y a des mots en trop !",
+          "type": "phrases_a_trous",
+          "disposition": "lignes",
+          "colonnes": 0,
+          "banque": ["fleurs", "œuf", "heure", "beurre", "jeu", "aspirateur", "queue", "bleu"],
+          "items": [
+            { "texte": "", "amorce": "", "suffixe": "", "avant": "Elle mange un ", "apres": " cuit dur.", "choix": [], "dessin": false },
+            { "texte": "", "amorce": "", "suffixe": "", "avant": "Maman dépose les ", "apres": " dans un vase.", "choix": [], "dessin": false },
+            { "texte": "", "amorce": "", "suffixe": "", "avant": "Milan regarde l'", "apres": " à sa montre.", "choix": [], "dessin": false },
+            { "texte": "", "amorce": "", "suffixe": "", "avant": "Luna met du ", "apres": " sur ma tartine.", "choix": [], "dessin": false },
+            { "texte": "", "amorce": "", "suffixe": "", "avant": "La ", "apres": " de l'écureuil est en panache.", "choix": [], "dessin": false },
+            { "texte": "", "amorce": "", "suffixe": "", "avant": "Zoé passe l'", "apres": " dans le salon.", "choix": [], "dessin": false }
+          ]
+        },
+        {
+          "consigne": "Choisis le mot qui convient.",
+          "type": "choix",
+          "disposition": "lignes",
+          "colonnes": 0,
+          "banque": [],
+          "items": [
+            { "texte": "", "amorce": "", "suffixe": "", "avant": "Dans l'étable, il y a des ", "apres": ".", "choix": ["œufs", "bœufs"], "dessin": false },
+            { "texte": "", "amorce": "", "suffixe": "", "avant": "J'ai ", "apres": " des araignées.", "choix": ["peur", "fleur"], "dessin": false },
+            { "texte": "", "amorce": "", "suffixe": "", "avant": "Marie a deux ", "apres": ".", "choix": ["cœurs", "sœurs"], "dessin": false },
+            { "texte": "", "amorce": "", "suffixe": "", "avant": "J'ai ", "apres": " fardes.", "choix": ["plusieurs", "monsieur"], "dessin": false },
+            { "texte": "", "amorce": "", "suffixe": "", "avant": "Charline a ", "apres": " de crayons.", "choix": ["bleu", "peu"], "dessin": false }
+          ]
+        }
+      ]
+    },
+    {
+      "titre": "Le son « ill »",
+      "grapheme": "ill",
+      "exercices": [
+        {
+          "consigne": "Lis ces mots.",
+          "type": "liste",
+          "disposition": "colonnes",
+          "colonnes": 3,
+          "banque": [],
+          "items": [
+            { "texte": "une fille", "amorce": "", "suffixe": "", "avant": "", "apres": "", "choix": [], "dessin": false },
+            { "texte": "une quille", "amorce": "", "suffixe": "", "avant": "", "apres": "", "choix": [], "dessin": false },
+            { "texte": "la chenille", "amorce": "", "suffixe": "", "avant": "", "apres": "", "choix": [], "dessin": false },
+            { "texte": "la jonquille", "amorce": "", "suffixe": "", "avant": "", "apres": "", "choix": [], "dessin": false },
+            { "texte": "le papillon", "amorce": "", "suffixe": "", "avant": "", "apres": "", "choix": [], "dessin": false },
+            { "texte": "le maquillage", "amorce": "", "suffixe": "", "avant": "", "apres": "", "choix": [], "dessin": false },
+            { "texte": "une béquille", "amorce": "", "suffixe": "", "avant": "", "apres": "", "choix": [], "dessin": false },
+            { "texte": "ma famille", "amorce": "", "suffixe": "", "avant": "", "apres": "", "choix": [], "dessin": false },
+            { "texte": "une brindille", "amorce": "", "suffixe": "", "avant": "", "apres": "", "choix": [], "dessin": false },
+            { "texte": "le gorille", "amorce": "", "suffixe": "", "avant": "", "apres": "", "choix": [], "dessin": false },
+            { "texte": "une myrtille", "amorce": "", "suffixe": "", "avant": "", "apres": "", "choix": [], "dessin": false },
+            { "texte": "briller", "amorce": "", "suffixe": "", "avant": "", "apres": "", "choix": [], "dessin": false },
+            { "texte": "des billets", "amorce": "", "suffixe": "", "avant": "", "apres": "", "choix": [], "dessin": false },
+            { "texte": "une bille", "amorce": "", "suffixe": "", "avant": "", "apres": "", "choix": [], "dessin": false },
+            { "texte": "une vrille", "amorce": "", "suffixe": "", "avant": "", "apres": "", "choix": [], "dessin": false }
+          ]
+        },
+        {
+          "consigne": "Entoure « ill ».",
+          "type": "liste",
+          "disposition": "inline",
+          "colonnes": 0,
+          "banque": [],
+          "items": [
+            { "texte": "aill", "amorce": "", "suffixe": "", "avant": "", "apres": "", "choix": [], "dessin": false },
+            { "texte": "euil", "amorce": "", "suffixe": "", "avant": "", "apres": "", "choix": [], "dessin": false },
+            { "texte": "ouill", "amorce": "", "suffixe": "", "avant": "", "apres": "", "choix": [], "dessin": false },
+            { "texte": "ill", "amorce": "", "suffixe": "", "avant": "", "apres": "", "choix": [], "dessin": false },
+            { "texte": "ail", "amorce": "", "suffixe": "", "avant": "", "apres": "", "choix": [], "dessin": false },
+            { "texte": "ill", "amorce": "", "suffixe": "", "avant": "", "apres": "", "choix": [], "dessin": false },
+            { "texte": "ouill", "amorce": "", "suffixe": "", "avant": "", "apres": "", "choix": [], "dessin": false },
+            { "texte": "ill", "amorce": "", "suffixe": "", "avant": "", "apres": "", "choix": [], "dessin": false },
+            { "texte": "ill", "amorce": "", "suffixe": "", "avant": "", "apres": "", "choix": [], "dessin": false },
+            { "texte": "euil", "amorce": "", "suffixe": "", "avant": "", "apres": "", "choix": [], "dessin": false },
+            { "texte": "ail", "amorce": "", "suffixe": "", "avant": "", "apres": "", "choix": [], "dessin": false },
+            { "texte": "ouil", "amorce": "", "suffixe": "", "avant": "", "apres": "", "choix": [], "dessin": false },
+            { "texte": "ill", "amorce": "", "suffixe": "", "avant": "", "apres": "", "choix": [], "dessin": false },
+            { "texte": "ill", "amorce": "", "suffixe": "", "avant": "", "apres": "", "choix": [], "dessin": false },
+            { "texte": "ill", "amorce": "", "suffixe": "", "avant": "", "apres": "", "choix": [], "dessin": false },
+            { "texte": "ouille", "amorce": "", "suffixe": "", "avant": "", "apres": "", "choix": [], "dessin": false },
+            { "texte": "ill", "amorce": "", "suffixe": "", "avant": "", "apres": "", "choix": [], "dessin": false },
+            { "texte": "euil", "amorce": "", "suffixe": "", "avant": "", "apres": "", "choix": [], "dessin": false },
+            { "texte": "ouil", "amorce": "", "suffixe": "", "avant": "", "apres": "", "choix": [], "dessin": false },
+            { "texte": "aille", "amorce": "", "suffixe": "", "avant": "", "apres": "", "choix": [], "dessin": false },
+            { "texte": "ill", "amorce": "", "suffixe": "", "avant": "", "apres": "", "choix": [], "dessin": false },
+            { "texte": "ill", "amorce": "", "suffixe": "", "avant": "", "apres": "", "choix": [], "dessin": false }
+          ]
+        },
+        {
+          "consigne": "Ajoute la syllabe qui manque à chaque mot.",
+          "type": "amorces",
+          "disposition": "colonnes",
+          "colonnes": 4,
+          "banque": [],
+          "items": [
+            { "texte": "", "amorce": "une pas", "suffixe": "", "avant": "", "apres": "", "choix": [], "dessin": true },
+            { "texte": "", "amorce": "une co", "suffixe": "", "avant": "", "apres": "", "choix": [], "dessin": true },
+            { "texte": "", "amorce": "une jon", "suffixe": "", "avant": "", "apres": "", "choix": [], "dessin": true },
+            { "texte": "", "amorce": "la che", "suffixe": "", "avant": "", "apres": "", "choix": [], "dessin": true }
+          ]
+        }
+      ]
+    }
+  ]
+}

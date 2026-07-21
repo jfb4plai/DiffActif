@@ -7,32 +7,20 @@ import { exportAdaptationsDocx, exportUniverselDocx, exportProfilDocx } from '..
 import { extractFile } from '../lib/extractFile'
 import { fetchPictosForText } from '../lib/arasaac'
 import { apiFetch } from '../lib/apiFetch'
-
-// ── Protection des blancs-réponse élève ──────────────────────
-// Remplace ..... et _____ par des tokens avant envoi à l'IA,
-// les restaure exactement après réception — l'IA ne peut pas compléter ce qu'elle ne voit pas.
-const BLANK_RE = /\.{3,}|_{3,}|…/g
-
-function protectBlanks(text) {
-  const map = []
-  const protected_ = text.replace(BLANK_RE, match => {
-    const token = `«BLANC_${map.length}»`
-    map.push(match)
-    return token
-  })
-  return { protected: protected_, map }
-}
-
-function restoreBlanks(text, map) {
-  const restored = text.replace(/«BLANC_(\d+)»/g, (_, i) => map[Number(i)] ?? '')
-  if (/«BLANC_\d+»/.test(restored)) {
-    throw new Error('Erreur interne : un espace-réponse n\'a pas été restauré. Veuillez regénérer.')
-  }
-  return restored
-}
+import {
+  protectBlanks,
+  restoreBlanks,
+  restoreBlanksStrict,
+  countBlanks,
+  findDegenerateChoices,
+} from '../../api/_blanks.js'
+import { renderAu } from '../lib/auLayout'
+import { validerPictos } from '../lib/pictoGuard'
 
 // ── Validation AU (client-side) ───────────────────────────────
-function validateAuRules(text) {
+// `original` = le texte source avant passage IA. Les invariants se mesurent
+// entre l'entrée et la sortie ; une règle qui ne compare rien ne vérifie rien.
+function validateAuRules(text, original = '') {
   const lines = text.split('\n')
   const exerciceLines = lines.filter(l => /^exercice\s+\d+/i.test(l.trim()))
 
@@ -47,11 +35,24 @@ function validateAuRules(text) {
   const longues = exerciceLines.filter(l => l.trim().split(/\s+/).length > 16)
   const phrasesCourtesOk = longues.length === 0
 
-  // Règle 4 : espaces-réponse préservés (______)
-  const nbBlancs = (text.match(/_{3,}/g) || []).length
+  // Règle 4 : espaces-réponse préservés — comparaison entrée / sortie
+  const nbBlancs = countBlanks(text)
+  const nbBlancsOrig = countBlanks(original)
+  const blancsOk = !original || nbBlancs === nbBlancsOrig
 
-  // Règle 5 : marqueurs [saut_de_page]
+  // Règle 5 : "Même Plan" — un exercice ne doit jamais être coupé par un saut de page
   const nbSauts = (text.match(/\[saut_de_page\]/gi) || []).length
+  const sautsOrphelins = lines.filter((l, i) => {
+    if (!/^\[saut_de_page\]$/i.test(l.trim())) return false
+    // Le saut doit être suivi d'un titre de section ou d'une consigne d'exercice.
+    const suivante = lines.slice(i + 1).find(x => x.trim())?.trim() ?? ''
+    return !(/^#{1,3}\s/.test(suivante) || /^exercice\s+\d+/i.test(suivante))
+  }).length
+  const memePlanOk = sautsOrphelins === 0
+
+  // Règle 7 : distracteurs préservés — "( a – b )" avec a === b rend l'exercice insoluble
+  const choixDegeneres = findDegenerateChoices(text)
+  const choixOk = choixDegeneres.length === 0
 
   // Règle 6 : aucun marqueur [? ?] résiduel (doutes non corrigés)
   const nbDoutes = (text.match(/\[\?/g) || []).length
@@ -81,17 +82,32 @@ function validateAuRules(text) {
     },
     {
       id: 'meme_plan',
-      label: 'Règle "Même Plan" — sauts de page',
-      ok: true,
-      detail: nbSauts > 0 ? `${nbSauts} saut(s) de page inséré(s)` : 'Aucun saut (thème unique ou non requis)',
-      info: true,
+      label: 'Règle "Même Plan" — aucun exercice coupé',
+      ok: memePlanOk,
+      blocking: true,
+      detail: memePlanOk
+        ? (nbSauts > 0 ? `${nbSauts} saut(s) de page, tous en début d'exercice` : 'Aucun saut (thème unique ou non requis)')
+        : `${sautsOrphelins} saut(s) de page au milieu d'un exercice`,
+      info: memePlanOk && nbSauts === 0,
     },
     {
       id: 'blancs',
-      label: 'Espaces-réponse préservés (______)',
-      ok: true,
-      detail: nbBlancs > 0 ? `${nbBlancs} espace(s)-réponse` : 'Aucun espace-réponse (normal si texte sans blancs)',
-      info: nbBlancs === 0,
+      label: 'Espaces-réponse préservés',
+      ok: blancsOk,
+      blocking: true,
+      detail: blancsOk
+        ? (nbBlancs > 0 ? `${nbBlancs} espace(s)-réponse conservé(s)` : 'Aucun espace-réponse (normal si texte sans blancs)')
+        : `${nbBlancs} espace(s)-réponse en sortie contre ${nbBlancsOrig} dans l'original — des réponses ont été complétées`,
+      info: blancsOk && nbBlancs === 0,
+    },
+    {
+      id: 'choix_distincts',
+      label: 'Exercices à choix — deux options distinctes',
+      ok: choixOk,
+      blocking: true,
+      detail: choixOk
+        ? 'Aucune paire dégénérée'
+        : `Options identiques : ${choixDegeneres.join(' · ')} — le distracteur a été écrasé`,
     },
     {
       id: 'police',
@@ -104,6 +120,7 @@ function validateAuRules(text) {
       id: 'sans_doutes',
       label: 'Aucun passage incertain [? ?] résiduel',
       ok: sansDoutesOk,
+      blocking: true,
       detail: sansDoutesOk ? 'Texte propre' : `${nbDoutes} passage(s) incertain(s) — corrigez avant export`,
     },
   ]
@@ -129,6 +146,11 @@ export default function Module2_Adapter() {
   const [dragOver, setDragOver]   = useState(false)
   const [hasDoutes, setHasDoutes] = useState(false)
   const [nbDoutes, setNbDoutes]   = useState(0)
+  const [ocrWarnings, setOcrWarnings] = useState([])
+  // Document structuré issu de la lecture. Sa présence active la mise en page
+  // déterministe ; s'il est absent (saisie manuelle, texte collé), on retombe
+  // sur la génération IA de la mise en page.
+  const [doc, setDoc] = useState(null)
 
   // Document AU universel
   const [generatingAu, setGeneratingAu]       = useState(false)
@@ -206,15 +228,19 @@ export default function Module2_Adapter() {
     setSaved(false)
     setHasDoutes(false)
     setNbDoutes(0)
+    setOcrWarnings([])
+    setDoc(null)
     setPageWarning(null)
     setAuTexte('')
     setProfilSections({})
 
     try {
-      const { text, hasDoutes: hd, nbDoutes: nb, pageWarning: pw } = await extractFile(file)
+      const { text, doc: d, hasDoutes: hd, nbDoutes: nb, warnings: wn, pageWarning: pw } = await extractFile(file)
       setActivite(text)
+      setDoc(d ?? null)
       setHasDoutes(hd)
       setNbDoutes(nb)
+      setOcrWarnings(wn ?? [])
       setPageWarning(pw ?? null)
     } catch (err) {
       setImportError(err.message)
@@ -238,20 +264,73 @@ export default function Module2_Adapter() {
 
   // ── Document AU universel ────────────────────────────────────
 
+  /**
+   * Mots-pictos pour les exercices d'amorces illustrés.
+   * L'IA propose, `validerPictos` tranche : un mot qui ne commence pas par
+   * l'amorce ou ne contient pas le graphème de la section est rejeté.
+   */
+  async function collecterPictos(structure) {
+    const pictos = {}
+    const demandes = []
+    ;(structure.sections ?? []).forEach((sec, si) => {
+      ;(sec.exercices ?? []).forEach((ex, ei) => {
+        if (ex.type !== 'amorces') return
+        if (!ex.items?.some(it => it.dessin)) return
+        demandes.push({ cle: `${si}.${ei}`, sec, ex })
+      })
+    })
+
+    await Promise.all(demandes.map(async ({ cle, sec, ex }) => {
+      try {
+        const res = await apiFetch('/api/generate', {
+          action: 'proposer_pictos',
+          context: {
+            grapheme: sec.grapheme ?? '',
+            consigne: ex.consigne ?? '',
+            amorces: ex.items.map(it => it.amorce),
+          },
+        })
+        if (!res.ok) return
+        const { text } = await res.json()
+        const mots = JSON.parse(text)?.mots ?? []
+        const valides = validerPictos(mots, ex.items, sec.grapheme)
+        if (valides.every(Boolean)) pictos[cle] = valides
+      } catch { /* pas de picto — l'exercice se rend sans, c'est acceptable */ }
+    }))
+
+    return pictos
+  }
+
   async function genererAU() {
     if (!activite.trim()) return
     setGeneratingAu(true)
+
+    // Chemin déterministe : la mise en page est calculée, pas générée.
+    if (doc) {
+      try {
+        const pictos = await collecterPictos(doc)
+        const { texte } = renderAu(doc, { pictos })
+        setAuTexte(texte)
+        setAuValidation(validateAuRules(texte, activite))
+      } catch (err) {
+        setError(err.message)
+      }
+      setGeneratingAu(false)
+      return
+    }
+
     try {
-      const { protected: activiteProtected, map: blanksMap } = protectBlanks(activite)
+      const { text: activiteProtected, map: blanksMap } = protectBlanks(activite)
       const res = await apiFetch('/api/generate', {
         action: 'appliquer_au',
         context: { activite: activiteProtected, matiere, niveau, type_enseignement: typeEns },
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error ?? 'Erreur serveur')
-      const auTexteRestored = restoreBlanks(data.text, blanksMap)
+      // Strict : sur le document AU, chaque espace-réponse doit survivre à l'identique.
+      const auTexteRestored = restoreBlanksStrict(data.text, blanksMap)
       setAuTexte(auTexteRestored)
-      setAuValidation(validateAuRules(auTexteRestored))
+      setAuValidation(validateAuRules(auTexteRestored, activite))
     } catch (err) {
       setError(err.message)
     }
@@ -289,7 +368,7 @@ export default function Module2_Adapter() {
 
     try {
       const baseText = auTexte || activite
-      const { protected: baseProtected, map: blanksMap } = protectBlanks(baseText)
+      const { text: baseProtected, map: blanksMap } = protectBlanks(baseText)
       const res = await apiFetch('/api/generate', {
         action: 'adapter_activite',
         context: { activite: baseProtected, objectif, profils: profilsChoisis, niveau, type_enseignement: typeEns, matiere, au_texte: auTexte ? baseProtected : null, historique_enseignant: histoAdaptations.length ? histoAdaptations : undefined },
@@ -501,6 +580,28 @@ export default function Module2_Adapter() {
                 </p>
               </div>
             )}
+            {doc && (
+              <div className="mt-2 flex items-start gap-2 rounded-lg bg-green-50 border border-green-200 px-3 py-2">
+                <span className="text-green-600 text-sm mt-0.5">✓</span>
+                <p className="text-xs text-green-800">
+                  <strong>Lecture structurée</strong> — {doc.sections?.length ?? 0} feuille(s),{' '}
+                  {(doc.sections ?? []).reduce((n, s) => n + (s.exercices?.length ?? 0), 0)} exercice(s).
+                  La mise en page AU sera calculée, pas générée : deux passages donneront le même document.
+                  Modifier le texte ci-dessous repasse en mise en page générée.
+                </p>
+              </div>
+            )}
+            {ocrWarnings.length > 0 && (
+              <div className="mt-2 flex items-start gap-2 rounded-lg bg-orange-50 border border-orange-200 px-3 py-2">
+                <span className="text-orange-500 text-sm mt-0.5">⚠</span>
+                <div className="text-xs text-orange-800 space-y-1">
+                  <p><strong>Contrôles de lecture</strong> — comparez ces points avec l'original avant de générer :</p>
+                  <ul className="list-disc list-inside">
+                    {ocrWarnings.map((w, i) => <li key={i}>{w}</li>)}
+                  </ul>
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="flex items-center gap-3">
@@ -511,10 +612,12 @@ export default function Module2_Adapter() {
 
           <div>
             <label className="label">Consigne / activité originale</label>
+            {/* Une édition manuelle désynchronise le document structuré :
+                on l'abandonne plutôt que de mettre en page un état périmé. */}
             <textarea
               className="input resize-none h-36"
               value={activite}
-              onChange={e => { setActivite(e.target.value); setResultat(''); setSaved(false); setAuTexte(''); setProfilSections({}) }}
+              onChange={e => { setActivite(e.target.value); setDoc(null); setResultat(''); setSaved(false); setAuTexte(''); setProfilSections({}) }}
               placeholder="Collez ici votre activité ou consigne telle qu'elle est destinée à l'ensemble de la classe..."
             />
             <p className="text-xs text-gray-400 mt-1">{activite.length} caractères (min. 20)</p>
@@ -598,18 +701,23 @@ export default function Module2_Adapter() {
                   Picto Arasaac avant chaque verbe d'action (option)
                 </span>
               </label>
-              {auValidation?.some(r => r.id === 'sans_doutes' && !r.ok) && (
+              {auValidation?.some(r => r.blocking && !r.ok) && (
                 <div className="flex items-start gap-2 rounded-lg bg-red-50 border border-red-200 px-3 py-2">
                   <span className="text-red-500 text-sm mt-0.5">✗</span>
-                  <p className="text-xs text-red-800">
-                    <strong>Export bloqué</strong> — des passages incertains <code className="bg-red-100 px-1 rounded">[? ?]</code> subsistent dans le texte AU.
-                    Corrigez-les manuellement dans la zone de texte avant d'exporter.
-                  </p>
+                  <div className="text-xs text-red-800 space-y-1">
+                    <p><strong>Export bloqué</strong> — le document AU ne respecte pas un invariant :</p>
+                    <ul className="list-disc list-inside">
+                      {auValidation.filter(r => r.blocking && !r.ok).map(r => (
+                        <li key={r.id}>{r.label} — {r.detail}</li>
+                      ))}
+                    </ul>
+                    <p>Relancez la génération, ou corrigez le texte source avant d'exporter.</p>
+                  </div>
                 </div>
               )}
               <button
                 onClick={exporterAuDocx}
-                disabled={exporting || auValidation?.some(r => r.id === 'sans_doutes' && !r.ok)}
+                disabled={exporting || auValidation?.some(r => r.blocking && !r.ok)}
                 className="btn-primary text-sm disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 {exporting ? 'Export...' : '⬇ Exporter document AU universel (.docx)'}

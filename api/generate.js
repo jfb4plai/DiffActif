@@ -31,6 +31,28 @@ export default async function handler(req, res) {
   const systemPrompt = buildSystemPrompt(action, context)
   const userMessage  = buildUserMessage(action, context)
 
+  // Proposition de mots-pictos : sortie JSON imposée par l'API, puis validée
+  // côté client contre l'amorce et le graphème (voir src/lib/pictoGuard.js).
+  const outputConfig = action === 'proposer_pictos'
+    ? {
+        format: {
+          type: 'json_schema',
+          schema: {
+            type: 'object',
+            additionalProperties: false,
+            required: ['mots'],
+            properties: {
+              mots: {
+                type: 'array',
+                items: { type: 'string' },
+                description: 'Un mot par amorce, dans le même ordre. Chaîne vide si aucun mot certain.',
+              },
+            },
+          },
+        },
+      }
+    : null
+
   try {
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
@@ -41,9 +63,12 @@ export default async function handler(req, res) {
       },
       body: JSON.stringify({
         model: 'claude-haiku-4-5-20251001',
-        max_tokens: action === 'appliquer_au' ? 2500 : action === 'adapter_activite' ? 2000 : action === 'verifier_exercice' ? 800 : 1200,
+        max_tokens: action === 'appliquer_au' ? 4096 : action === 'adapter_activite' ? 2000 : action === 'verifier_exercice' ? 800 : 1200,
+        // temperature: 0 — sans ça, deux passages du même document divergent.
+        temperature: 0,
         system: systemPrompt,
         messages: [{ role: 'user', content: userMessage }],
+        ...(outputConfig ? { output_config: outputConfig } : {}),
       }),
     })
 
@@ -147,6 +172,24 @@ Ces conseils sont des suggestions — pas des prescriptions. Aucun élève ne co
 ${antiClaudisation(niveauLabel, typeLabel)}`
   }
 
+  if (action === 'proposer_pictos') {
+    return `Tu identifies le mot que représente chaque dessin d'un exercice de complétion, dans un document scolaire FWB.
+
+Pour chaque amorce, propose le mot français complet que l'élève doit écrire.
+
+Contraintes :
+- Le mot commence exactement par l'amorce donnée (article compris ou non, peu importe : c'est le radical qui compte).
+- Le mot contient le graphème travaillé dans cette section.
+- Si aucun mot ne satisfait ces deux conditions avec certitude, renvoie une chaîne vide pour cette amorce.
+- Autant de mots que d'amorces, dans le même ordre.
+
+Exemple — graphème « ill », amorces "une pas", "une co", "une jon", "la che" :
+→ ["pastille", "coquille", "jonquille", "chenille"]
+« colline » serait faux : le mot s'écrit c-o-l-l-i-n-e et ne contient pas « ill ».
+
+Une chaîne vide vaut mieux qu'un mot approximatif : le pictogramme sera simplement omis.`
+  }
+
   if (action === 'creer_sequence') {
     return `${base}
 
@@ -218,18 +261,24 @@ Tu appliques les Aménagements Universels (AU) à un document scolaire destiné 
 Les AU améliorent l'accessibilité pour TOUS les élèves sans stigmatiser personne.
 
 RÈGLE ABSOLUE — CE DOCUMENT EST POUR LES ÉLÈVES, PAS UN CORRIGÉ :
-- Les blancs à remplir (______, ......., espaces vides dans les phrases) sont des espaces-réponse élève.
-- INTERDIT de les compléter, même partiellement. Jamais.
-- "une pas......." reste "une pas......." — JAMAIS "une pastille" ni "une past.....e".
-- "Elle mange un ....... cuit dur." reste avec le blanc intact — JAMAIS "Elle mange un œuf cuit dur."
-- "un j............" reste "un j............" — JAMAIS "un jour".
+- Les marqueurs [[B0]], [[B1]], [[B2]]… sont les espaces-réponse que l'élève doit remplir.
+- Recopie-les à l'identique, dans le même ordre. N'en ajoute aucun, n'en supprime aucun, n'en résous aucun.
+- "une pas[[B7]]" reste "une pas[[B7]]" — JAMAIS "une pastille".
+- "Elle mange un [[B12]] cuit dur." reste tel quel — JAMAIS "Elle mange un œuf cuit dur."
 - Cette règle prime sur toute autre instruction. Aucune exception.
+
+RÈGLE ABSOLUE — EXERCICES À CHOIX :
+- Dans "( a – b )", une des deux options est volontairement fausse : c'est le distracteur.
+- INTERDIT de remplacer une option par l'autre, de corriger une option qui te paraît fautive,
+  ou de produire deux options identiques. "( bleu – peu )" ne devient JAMAIS "( peu – peu )".
+- Recopie chaque paire de choix exactement telle qu'elle est.
 
 AMÉNAGEMENTS UNIVERSELS À APPLIQUER :
 1. Consignes courtes — max 15 mots par phrase, une idée par phrase
 2. Verbe d'action en début de consigne, entre ** : **Lis**, **Complète**, **Entoure**
 3. Numérotation des exercices : si le document traite UN SEUL sujet/thème → numérotation continue (Exercice 1, 2, 3, 4…) sur l'ensemble du document. Si le document contient PLUSIEURS thèmes distincts (ex : une feuille sur « eu/oeu » et une feuille sur « ill ») → chaque nouveau thème redémarre à Exercice 1. Ne jamais renuméroter à l'intérieur d'un même thème.
-4. Structurer avec des titres Markdown # : les lignes encadrées de | (ex : | « eu » - « oeu » |) ou les lignes isolées qui servent de titre de section AVANT des exercices → les convertir en # Titre (ex : # Le son « eu » – « oeu » – « eur » – « oeur »). Supprimer les | et la ponctuation décorative.
+4. Structurer avec des titres Markdown # : une ligne encadrée de | (ex : | « eu » - « oeu » |) ou une ligne isolée qui sert de titre de section AVANT des exercices → la convertir en # Titre (ex : # Le son « eu » – « oeu » – « eur » – « oeur »). Supprimer les | et la ponctuation décorative de CETTE ligne uniquement.
+   ⚠️ Ne s'applique JAMAIS à une ligne d'items : si une ligne contient plusieurs mots, amorces ou marqueurs [[B…]] séparés par « | », ces « | » sont des séparateurs de colonnes. Conserve-les tels quels et garde la ligne sur une seule ligne.
 5. Remplacer les mots rares par leur équivalent courant si possible
 6. Conserver TOUT le contenu original : exercices, listes de mots, phrases, choix
 
@@ -242,13 +291,18 @@ RÈGLE "MÊME PLAN" (non négociable) :
 
 PICTOGRAMMES ARASAAC — SUPPORT VISUEL (obligatoire si applicable) :
 Cas 1 — Dessin explicite : si l'exercice mentionne un dessin ou une image ([dessin], [image], ou décrit un objet), remplace-le par [picto: mot_représenté] sur sa propre ligne.
-Cas 2 — Exercice de complétion avec amorces : si l'exercice demande de compléter un mot à partir d'une amorce (ex : "une pas......", "une co......") ET que le contexte phonologique permet d'inférer le mot complet, insère UNE SEULE ligne de pictos AVANT la ligne des amorces.
+Cas 2 — Exercice de complétion avec amorces : si l'exercice demande de compléter un mot à partir d'une amorce (ex : "une pas[[B4]]", "une co[[B5]]"), insère UNE SEULE ligne de pictos AVANT la ligne des amorces.
   RÈGLE ABSOLUE : autant de pictos que d'amorces, dans le même ordre, séparés par " | " sur une seule ligne.
-  Exemple : thème « -ille » + 4 amorces "une pas...... | une co...... | une jon...... | la che......"
+  Exemple : thème « ill » + 4 amorces "une pas[[B4]] | une co[[B5]] | une jon[[B6]] | la che[[B7]]"
   → ligne picto (UNE seule ligne) : [picto: pastille] | [picto: coquille] | [picto: jonquille] | [picto: chenille]
-  → ligne réponse (inchangée) : une pas...... | une co...... | une jon...... | la che......
+  → ligne réponse (inchangée) : une pas[[B4]] | une co[[B5]] | une jon[[B6]] | la che[[B7]]
   INTERDIT : plusieurs lignes [picto:] séparées — toujours une seule ligne avec " | " entre chaque picto.
-  Le picto représente le MOT COMPLET (pas la syllabe manquante). Le blanc à compléter reste présent.
+  Le picto représente le MOT COMPLET (pas la syllabe manquante). Le marqueur [[B…]] reste présent.
+  DEUX CONDITIONS CUMULATIVES pour proposer un mot — si l'une échoue, n'écris AUCUN picto pour cet item :
+  (a) le mot commence exactement par l'amorce visible ;
+  (b) le mot contient le graphème du thème de la section (le son traité dans le titre).
+  Exemple thème « ill », amorce « co » : « coquille » contient bien « ill » ✓. « colline » s'écrit c-o-l-l-i-n-e et ne contient pas « ill » ✗ → interdit.
+  Mieux vaut aucun picto qu'un picto qui ne correspond pas à la réponse attendue.
 - Ne pas insérer de picto pour les éléments purement décoratifs sans lien avec la tâche de l'élève.
 
 PASSAGES INCERTAINS [? ?] — RÉSOLUTION OCR UNIQUEMENT :
@@ -275,7 +329,7 @@ RÈGLES :
 - Retourne le document reformaté, rien d'autre
 - Conserve la structure complète (aucun contenu supprimé)
 - N'ajoute pas de commentaire, d'introduction ni de conclusion
-- Les blancs à compléter (______, .......) restent intacts — voir RÈGLE ABSOLUE en tête de prompt.
+- Les marqueurs [[B…]] restent intacts et dans l'ordre — voir RÈGLE ABSOLUE en tête de prompt.
 - Utilise UNIQUEMENT des guillemets français : « mot » — jamais de guillemets anglais " ou "
 
 ${antiClaudisation(niveauLabel, typeLabel)}`
@@ -302,6 +356,13 @@ Objectif d'apprentissage : ${context.objectif ?? 'Non précisé'}
 Profils présents dans la classe : ${profils}
 
 Génère les conseils pédagogiques par profil avec des exemples tirés du document de référence. Commence directement par le premier profil.`
+  }
+
+  if (action === 'proposer_pictos') {
+    return `Graphème travaillé : ${context.grapheme || 'aucun'}
+Consigne de l'exercice : ${context.consigne ?? ''}
+Amorces, dans l'ordre :
+${(context.amorces ?? []).map((a, i) => `${i + 1}. ${a}`).join('\n')}`
   }
 
   if (action === 'creer_sequence') {

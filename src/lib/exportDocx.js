@@ -542,7 +542,7 @@ function hasAuContentAhead(lines, i) {
   for (let j = i + 1; j < Math.min(i + 8, lines.length); j++) {
     const t = lines[j].trim()
     if (!t) { if (++blanks > 2) return false; continue }
-    return /^(_{5,}|\.{5,}|«BLANC_\d+»|\[picto:)/i.test(t)
+    return /^(_{5,}|\.{5,}|\[\[B\d+\]\]|\[picto:)/i.test(t)
   }
   return false
 }

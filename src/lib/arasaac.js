@@ -48,7 +48,11 @@ export function extractKeywords(text, n = 6) {
 
 /**
  * Sélectionne le meilleur résultat Arasaac parmi les 3 premiers.
- * Priorité : correspondance exacte du mot-clé, puis chevauchement lexical avec le contexte.
+ *
+ * Aucun repli sur « le premier résultat » : la recherche Arasaac est floue, et
+ * accepter un candidat sans correspondance revient à afficher un pictogramme
+ * arbitraire sous une consigne. Sans correspondance exacte ou contextuelle,
+ * on ne renvoie rien — un picto absent se remarque, un picto faux induit en erreur.
  */
 function selectBestResult(results, keyword, contextWords = []) {
   const candidates = results.slice(0, 3)
@@ -60,11 +64,11 @@ function selectBestResult(results, keyword, contextWords = []) {
     if (tags.includes(kw)) return r
   }
 
-  // Priorité 2 : score de chevauchement avec les mots du contexte
+  // Priorité 2 : chevauchement réel avec les mots du contexte
   if (contextWords.length > 0) {
     const ctx = new Set(contextWords.map(w => w.toLowerCase()))
-    let bestScore = -1
-    let best = candidates[0]
+    let bestScore = 0
+    let best = null
     for (const r of candidates) {
       const tags = (r.keywords ?? []).map(k => (k.keyword ?? '').toLowerCase())
       const score = tags.filter(t => ctx.has(t)).length
@@ -73,7 +77,7 @@ function selectBestResult(results, keyword, contextWords = []) {
     return best
   }
 
-  return candidates[0]
+  return null
 }
 
 /**
@@ -94,6 +98,7 @@ export async function searchArasaac(keyword, contextWords = []) {
     const results = await res.json()
     if (!results?.length) return null
     const best = selectBestResult(results, keyword, contextWords)
+    if (!best) return null
     const id = best._id
     const result = {
       id,

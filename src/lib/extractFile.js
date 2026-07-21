@@ -70,7 +70,7 @@ export async function extractFile(file) {
     const res = await apiFetch('/api/extract', { images })
     const data = await res.json()
     if (!res.ok) throw new Error(data.error ?? 'Erreur OCR')
-    return { text: data.text, hasDoutes: data.hasDoutes, nbDoutes: data.nbDoutes ?? 0, pageWarning }
+    return { text: data.text, doc: data.doc ?? null, anomalies: data.anomalies ?? [], hasDoutes: data.hasDoutes, nbDoutes: data.nbDoutes ?? 0, warnings: data.warnings ?? [], pageWarning }
   }
 
   if (ext === 'docx') {
@@ -79,7 +79,7 @@ export async function extractFile(file) {
     const result = await mammoth.extractRawText({ arrayBuffer })
     const text = result.value.replace(/\r\n/g, '\n').replace(/\n{3,}/g, '\n\n').trim()
     if (!text) throw new Error('Aucun texte extrait du fichier DOCX.')
-    return { text, hasDoutes: false, nbDoutes: 0 }
+    return { text, doc: null, anomalies: [], hasDoutes: false, nbDoutes: 0, warnings: [] }
   }
 
   if (['jpg', 'jpeg', 'png', 'webp'].includes(ext)) {
@@ -87,7 +87,7 @@ export async function extractFile(file) {
     const res = await apiFetch('/api/extract', { images: [base64] })
     const data = await res.json()
     if (!res.ok) throw new Error(data.error ?? 'Erreur OCR')
-    return { text: data.text, hasDoutes: data.hasDoutes, nbDoutes: data.nbDoutes ?? 0 }
+    return { text: data.text, doc: data.doc ?? null, anomalies: data.anomalies ?? [], hasDoutes: data.hasDoutes, nbDoutes: data.nbDoutes ?? 0, warnings: data.warnings ?? [] }
   }
 
   throw new Error('Format non supporté — utilisez PDF, DOCX ou une image (JPG, PNG, WebP).')
