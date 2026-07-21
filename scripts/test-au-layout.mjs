@@ -6,7 +6,7 @@
  * et vérifie les invariants que le pipeline IA cassait auparavant.
  */
 import { readFileSync } from 'node:fs'
-import { renderAu, BLANC } from '../src/lib/auLayout.js'
+import { renderAu, BLANC, longueurConsigne } from '../src/lib/auLayout.js'
 import { validerDoc, pointsAVerifier } from '../api/_docSchema.js'
 import { motPictoValide, validerPictos } from '../src/lib/pictoGuard.js'
 import { findDegenerateChoices, countBlanks } from '../api/_blanks.js'
@@ -104,6 +104,16 @@ const complete = JSON.parse(JSON.stringify(doc))
 complete.sections[1].exercices[2].items[1].amorce = 'une coquille'
 test('une réponse recopiée dans l\'amorce est détectée',
   validerDoc(complete).some(a => a.includes('a probablement été complétée')))
+
+// ── Validateur et rendu doivent compter les mots de la même façon ──────
+// Le validateur comptait les guillemets et les tirets comme des mots : il
+// affichait « 2 consignes trop longues » là où le rendu n'en voyait aucune.
+const consigneSeule = l => l.replace(/^exercice\s+\d+\s*[—–-]\s*/i, '').replace(/\*\*/g, '')
+const lignesEx = texte.split('\n').filter(l => /^Exercice \d+/.test(l))
+const tropLongues = lignesEx.filter(l => longueurConsigne(consigneSeule(l)) > 15)
+test('validateur et rendu comptent les mots identiquement',
+  tropLongues.length === consignesLongues.length,
+  `validateur : ${tropLongues.length} · rendu : ${consignesLongues.length}`)
 
 // ── Points à relire : doivent rester silencieux sur un document juste ──
 const copie = () => JSON.parse(JSON.stringify(doc))

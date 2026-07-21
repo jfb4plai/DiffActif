@@ -36,6 +36,11 @@ FAMILLE PHONOLOGIQUE — contrôle obligatoire sur le titre et les consignes :
 - Avant de valider un titre ou une consigne, vérifie que toutes les graphies notent le même son.
   Si l'une détonne, c'est ta lecture qui est fautive, pas le document.
 - Le champ "grapheme" doit appartenir à la famille du titre.
+- COHÉRENCE TITRE ↔ CONSIGNE : quand le titre et une consigne énumèrent la même série
+  de graphies, elles doivent être IDENTIQUES, graphie par graphie et dans le même ordre.
+  Un titre « eu – oeu – eur – oeur » avec une consigne « Ajoute eu – oeu – our – oeur »
+  est impossible : relis les deux et aligne-les sur la famille correcte.
+  Ce contrôle est le dernier que tu fais avant de rendre ta réponse.
 
 PIÈGES DE LECTURE (le son prime sur les lettres) :
 - Sur une feuille « ill » (son /ij/ comme dans "fille"), les mots "ville", "mille", "tranquille"

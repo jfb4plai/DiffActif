@@ -14,7 +14,7 @@ import {
   countBlanks,
   findDegenerateChoices,
 } from '../../api/_blanks.js'
-import { renderAu } from '../lib/auLayout'
+import { renderAu, longueurConsigne } from '../lib/auLayout'
 import { validerPictos, motPictoValide } from '../lib/pictoGuard'
 import { pointsAVerifier } from '../../api/_docSchema.js'
 
@@ -32,8 +32,13 @@ function validateAuRules(text, original = '', edite = false) {
   // Règle 2 : exercices numérotés
   const numerotationOk = exerciceLines.length > 0
 
-  // Règle 3 : phrases courtes (≤ 15 mots) — contrôle sur les lignes de consigne
-  const longues = exerciceLines.filter(l => l.trim().split(/\s+/).length > 16)
+  // Règle 3 : consignes ≤ 15 mots.
+  // Le comptage vient de longueurConsigne() — la même fonction que le moteur de
+  // rendu. Compter ici autrement, c'est garantir que validateur et rendu se
+  // contrediront : c'est exactement ce qui est arrivé avec les guillemets et
+  // les tirets comptés comme des mots.
+  const consigneSeule = l => l.replace(/^exercice\s+\d+\s*[—–-]\s*/i, '').replace(/\*\*/g, '')
+  const longues = exerciceLines.filter(l => longueurConsigne(consigneSeule(l.trim())) > 15)
   const phrasesCourtesOk = longues.length === 0
 
   // Règle 4 : espaces-réponse préservés — comparaison entrée / sortie
@@ -606,18 +611,27 @@ export default function Module2_Adapter() {
               )}
             </div>
             {importError && <p className="text-xs text-red-500 mt-1">{importError}</p>}
+            {/* Deux publics : avec lecture structurée, corriger ICI ferait perdre
+                la mise en page calculée — on renvoie donc la correction à l'étape
+                d'après. Sans structure, la zone ci-dessous est le seul endroit
+                où corriger. Un seul bandeau pour les deux disait le contraire
+                de l'autre. */}
             {importedFile && !importing && !hasDoutes && (
               <div className="mt-2 flex items-start gap-2 rounded-lg bg-blue-50 border border-blue-200 px-3 py-2">
                 <span className="text-blue-500 text-sm mt-0.5">ℹ</span>
                 <div className="text-xs text-blue-800 space-y-1">
-                  <p><strong>Texte extrait — relisez avant de générer.</strong></p>
-                  <p>La qualité de l'OCR dépend du document d'origine. Vérifiez particulièrement :</p>
+                  <p><strong>Texte lu — à comparer avec votre original.</strong></p>
+                  <p>Lire une écriture manuscrite reste une mesure. Vérifiez particulièrement :</p>
                   <ul className="list-disc list-inside space-y-0.5 pl-1">
                     <li>Les <strong>espaces-réponse</strong> (.......) sont-ils bien présents et intacts ?</li>
                     <li>Les <strong>lettres encadrant les blancs</strong> sont-elles complètes ? (ex : <code className="bg-blue-100 px-1 rounded">un b..........f</code>, pas <code className="bg-blue-100 px-1 rounded">un b..........</code>)</li>
-                    <li>Les <strong>mots courants</strong> sont-ils correctement reconnus ?</li>
+                    <li>Les <strong>graphies annoncées dans le titre et la consigne</strong> sont-elles les mêmes ?</li>
                   </ul>
-                  <p className="text-blue-600">Corrigez directement dans la zone de texte ci-dessous si nécessaire.</p>
+                  <p className="text-blue-600">
+                    {doc
+                      ? 'Ne corrigez pas ici : la correction se fait dans le document AU, après génération, sans perdre la mise en page calculée.'
+                      : 'Corrigez directement dans la zone de texte ci-dessous si nécessaire.'}
+                  </p>
                 </div>
               </div>
             )}
