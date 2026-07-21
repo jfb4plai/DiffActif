@@ -15,12 +15,13 @@ import {
   findDegenerateChoices,
 } from '../../api/_blanks.js'
 import { renderAu } from '../lib/auLayout'
-import { validerPictos } from '../lib/pictoGuard'
+import { validerPictos, motPictoValide } from '../lib/pictoGuard'
+import { pointsAVerifier } from '../../api/_docSchema.js'
 
 // ── Validation AU (client-side) ───────────────────────────────
 // `original` = le texte source avant passage IA. Les invariants se mesurent
 // entre l'entrée et la sortie ; une règle qui ne compare rien ne vérifie rien.
-function validateAuRules(text, original = '') {
+function validateAuRules(text, original = '', edite = false) {
   const lines = text.split('\n')
   const exerciceLines = lines.filter(l => /^exercice\s+\d+/i.test(l.trim()))
 
@@ -94,10 +95,16 @@ function validateAuRules(text, original = '') {
       id: 'blancs',
       label: 'Espaces-réponse préservés',
       ok: blancsOk,
-      blocking: true,
+      // Tant que la machine seule a produit le texte, l'écart est une faute et
+      // il bloque. Dès que l'enseignant a édité, c'est lui qui décide : l'écart
+      // devient un signalement. Le bloquer reviendrait à lui interdire de
+      // supprimer un exercice.
+      blocking: !edite,
       detail: blancsOk
         ? (nbBlancs > 0 ? `${nbBlancs} espace(s)-réponse conservé(s)` : 'Aucun espace-réponse (normal si texte sans blancs)')
-        : `${nbBlancs} espace(s)-réponse en sortie contre ${nbBlancsOrig} dans l'original — des réponses ont été complétées`,
+        : edite
+          ? `${nbBlancs} espace(s)-réponse contre ${nbBlancsOrig} à l'origine — écart dû à votre édition, vérifiez qu'il est voulu`
+          : `${nbBlancs} espace(s)-réponse en sortie contre ${nbBlancsOrig} dans l'original — des réponses ont été complétées`,
       info: blancsOk && nbBlancs === 0,
     },
     {
@@ -151,6 +158,11 @@ export default function Module2_Adapter() {
   // déterministe ; s'il est absent (saisie manuelle, texte collé), on retombe
   // sur la génération IA de la mise en page.
   const [doc, setDoc] = useState(null)
+  const [pictosParEx, setPictosParEx]     = useState({})
+  const [pointsRelecture, setPointsRelecture] = useState([])
+  const [auEdite, setAuEdite]             = useState(false)
+  const [relu, setRelu]                   = useState(false)
+  const [pictoErreur, setPictoErreur]     = useState({})
 
   // Document AU universel
   const [generatingAu, setGeneratingAu]       = useState(false)
@@ -230,6 +242,10 @@ export default function Module2_Adapter() {
     setNbDoutes(0)
     setOcrWarnings([])
     setDoc(null)
+    setPictosParEx({})
+    setPointsRelecture([])
+    setAuEdite(false)
+    setRelu(false)
     setPageWarning(null)
     setAuTexte('')
     setProfilSections({})
@@ -264,6 +280,46 @@ export default function Module2_Adapter() {
 
   // ── Document AU universel ────────────────────────────────────
 
+  /** Recalcule le document AU depuis la structure, et remet la relecture à zéro. */
+  function appliquerRendu(structure, pictos) {
+    const { texte } = renderAu(structure, { pictos })
+    setAuTexte(texte)
+    setAuValidation(validateAuRules(texte, activite, false))
+    setAuEdite(false)
+    setRelu(false)
+  }
+
+  /** Édition manuelle du document AU par l'enseignant — c'est lui qui décide. */
+  function editerAu(texte) {
+    setAuTexte(texte)
+    setAuEdite(true)
+    setRelu(false)
+    setAuValidation(validateAuRules(texte, activite, true))
+  }
+
+  /**
+   * Change le mot d'un pictogramme. Le mot proposé est revalidé contre
+   * l'amorce et le graphème : l'enseignant décide, mais pas n'importe quoi.
+   * Un mot vide retire simplement le pictogramme de l'exercice.
+   */
+  function changerPicto(cle, index, mot) {
+    const [si, ei] = cle.split('.').map(Number)
+    const sec = doc.sections[si]
+    const ex = sec.exercices[ei]
+    const courant = pictosParEx[cle] ?? ex.items.map(() => null)
+    const suivant = [...courant]
+    const propre = mot.trim().toLowerCase()
+
+    if (!propre) suivant[index] = null
+    else if (motPictoValide(propre, ex.items[index].amorce, sec.grapheme)) suivant[index] = propre
+    else return { ok: false, raison: `« ${mot} » ne commence pas par « ${ex.items[index].amorce.trim()} » ou ne contient pas « ${sec.grapheme} »` }
+
+    const tous = { ...pictosParEx, [cle]: suivant }
+    setPictosParEx(tous)
+    appliquerRendu(doc, tous)
+    return { ok: true }
+  }
+
   /**
    * Mots-pictos pour les exercices d'amorces illustrés.
    * L'IA propose, `validerPictos` tranche : un mot qui ne commence pas par
@@ -294,7 +350,7 @@ export default function Module2_Adapter() {
         const { text } = await res.json()
         const mots = JSON.parse(text)?.mots ?? []
         const valides = validerPictos(mots, ex.items, sec.grapheme)
-        if (valides.every(Boolean)) pictos[cle] = valides
+        pictos[cle] = valides
       } catch { /* pas de picto — l'exercice se rend sans, c'est acceptable */ }
     }))
 
@@ -309,9 +365,9 @@ export default function Module2_Adapter() {
     if (doc) {
       try {
         const pictos = await collecterPictos(doc)
-        const { texte } = renderAu(doc, { pictos })
-        setAuTexte(texte)
-        setAuValidation(validateAuRules(texte, activite))
+        setPictosParEx(pictos)
+        appliquerRendu(doc, pictos)
+        setPointsRelecture(pointsAVerifier(doc))
       } catch (err) {
         setError(err.message)
       }
@@ -330,7 +386,10 @@ export default function Module2_Adapter() {
       // Strict : sur le document AU, chaque espace-réponse doit survivre à l'identique.
       const auTexteRestored = restoreBlanksStrict(data.text, blanksMap)
       setAuTexte(auTexteRestored)
-      setAuValidation(validateAuRules(auTexteRestored, activite))
+      setAuValidation(validateAuRules(auTexteRestored, activite, false))
+      setAuEdite(false)
+      setRelu(false)
+      setPointsRelecture([])
     } catch (err) {
       setError(err.message)
     }
@@ -656,8 +715,97 @@ export default function Module2_Adapter() {
 
           {auTexte && (
             <div className="mt-4 space-y-3">
-              <div className="bg-white rounded-xl p-4 text-sm text-gray-700 whitespace-pre-wrap leading-relaxed border border-jfb-bordure max-h-48 overflow-y-auto">
-                {auTexte}
+              {/* Points à relire en priorité — dirige l'œil avant la relecture. */}
+              {pointsRelecture.length > 0 && (
+                <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
+                  <p className="text-xs font-semibold text-amber-900">
+                    À vérifier en priorité sur votre original
+                  </p>
+                  <ul className="mt-2 space-y-1">
+                    {pointsRelecture.map((p, i) => (
+                      <li key={i} className="text-xs text-amber-900">
+                        <span className="font-medium">« {p.extrait} »</span>
+                        <span className="text-amber-700"> — {p.raison}</span>
+                        <span className="text-amber-600"> · {p.ou}</span>
+                      </li>
+                    ))}
+                  </ul>
+                  <p className="mt-2 text-xs text-amber-700">
+                    Cette liste ne repère que ce qui est vérifiable sans dictionnaire.
+                    Une lettre mal lue dans un mot plausible n'y figure pas : relisez l'ensemble.
+                  </p>
+                </div>
+              )}
+
+              {/* Panneau pictogrammes — l'enseignant voit le mot retenu et peut le changer. */}
+              {doc && Object.keys(pictosParEx).length > 0 && (
+                <div className="rounded-xl border border-gray-200 bg-white overflow-hidden">
+                  <div className="px-4 py-2 bg-gray-50 border-b border-gray-200">
+                    <p className="text-xs font-semibold text-gray-700">Pictogrammes — vérifiez chaque mot</p>
+                    <p className="text-xs text-gray-500 mt-0.5">
+                      Un pictogramme n'apparaît que si tous les mots de l'exercice sont renseignés.
+                      Videz un champ pour le retirer. Modifier un mot recalcule le document et annule vos éditions du texte.
+                    </p>
+                  </div>
+                  <div className="divide-y divide-gray-100">
+                    {Object.entries(pictosParEx).map(([cle, mots]) => {
+                      const [si, ei] = cle.split('.').map(Number)
+                      const sec = doc.sections?.[si]
+                      const ex  = sec?.exercices?.[ei]
+                      if (!ex) return null
+                      return (
+                        <div key={cle} className="px-4 py-3">
+                          <p className="text-xs text-gray-500 mb-2">
+                            Exercice {ei + 1}{sec.titre ? ` — ${sec.titre}` : ''}
+                            {sec.grapheme ? ` · son « ${sec.grapheme} »` : ''}
+                          </p>
+                          <div className="flex flex-wrap gap-3">
+                            {ex.items.map((it, ii) => (
+                              <div key={ii} className="w-40">
+                                <label className="block text-xs text-gray-600 mb-1">
+                                  {it.amorce}<span className="text-gray-400">……</span>{it.suffixe}
+                                </label>
+                                <input
+                                  className="input text-sm py-1"
+                                  defaultValue={mots[ii] ?? ''}
+                                  placeholder="aucun picto"
+                                  onBlur={e => {
+                                    const r = changerPicto(cle, ii, e.target.value)
+                                    setPictoErreur(prev => ({ ...prev, [`${cle}.${ii}`]: r.ok ? '' : r.raison }))
+                                    if (!r.ok) e.target.value = mots[ii] ?? ''
+                                  }}
+                                />
+                                {pictoErreur[`${cle}.${ii}`] && (
+                                  <p className="text-xs text-red-600 mt-1">{pictoErreur[`${cle}.${ii}`]}</p>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Document AU — éditable : l'enseignant relit et corrige avant export. */}
+              <div>
+                <div className="flex items-baseline justify-between mb-1">
+                  <label className="text-xs font-semibold text-gray-700">
+                    Document AU — relisez et corrigez
+                  </label>
+                  {auEdite && <span className="text-xs text-orange-600">modifié par vous</span>}
+                </div>
+                <textarea
+                  className="input resize-y h-80 font-mono text-xs leading-relaxed"
+                  value={auTexte}
+                  onChange={e => editerAu(e.target.value)}
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  La lecture d'une écriture manuscrite est une mesure, pas une certitude.
+                  Comparez avec votre original : c'est vous qui validez ce que reçoit l'élève.
+                  Les contrôles ci-dessous continuent de s'appliquer à vos corrections.
+                </p>
               </div>
 
               {/* Validation AU */}
@@ -715,13 +863,32 @@ export default function Module2_Adapter() {
                   </div>
                 </div>
               )}
+              {/* La relecture est un geste, pas un avertissement qu'on survole. */}
+              <label className="flex items-start gap-2 cursor-pointer select-none rounded-lg border border-jfb-bordure bg-white px-3 py-2">
+                <input
+                  type="checkbox"
+                  checked={relu}
+                  onChange={e => setRelu(e.target.checked)}
+                  className="w-4 h-4 mt-0.5 accent-jfb-rose shrink-0"
+                />
+                <span className="text-xs text-gray-700">
+                  <strong>J'ai relu le document ci-dessus</strong> et l'ai comparé à mon original,
+                  y compris les mots des pictogrammes.
+                </span>
+              </label>
+
               <button
                 onClick={exporterAuDocx}
-                disabled={exporting || auValidation?.some(r => r.blocking && !r.ok)}
+                disabled={exporting || !relu || auValidation?.some(r => r.blocking && !r.ok)}
                 className="btn-primary text-sm disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 {exporting ? 'Export...' : '⬇ Exporter document AU universel (.docx)'}
               </button>
+              {!relu && !auValidation?.some(r => r.blocking && !r.ok) && (
+                <p className="text-xs text-gray-500">
+                  Cochez la relecture pour débloquer l'export.
+                </p>
+              )}
             </div>
           )}
         </div>

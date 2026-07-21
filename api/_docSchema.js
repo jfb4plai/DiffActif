@@ -155,6 +155,58 @@ export function renderSource(doc, blanc = '..........') {
 }
 
 /**
+ * Points à relire en priorité.
+ *
+ * Ce ne sont PAS des erreurs : ce sont des configurations structurellement
+ * inhabituelles, là où la lecture d'une écriture cursive se trompe le plus
+ * souvent. Rien n'est corrigé — l'œil de l'enseignant est simplement dirigé.
+ *
+ * Limite assumée : cette liste ne couvre que ce qui est vérifiable sans
+ * dictionnaire. Une amorce mal lue mais plausible (« un pr » pour « un pn »)
+ * n'apparaîtra pas. Relire l'ensemble reste nécessaire.
+ */
+export function pointsAVerifier(doc) {
+  const points = []
+  // La ligature masque le graphème : "œuf" contient « eu » une fois délié.
+  const delier = s => String(s ?? '').toLowerCase().replace(/œ/g, 'oe').replace(/æ/g, 'ae')
+
+  ;(doc?.sections ?? []).forEach(sec => {
+    const g = delier(sec.grapheme).trim()
+    ;(sec.exercices ?? []).forEach((ex, ei) => {
+      const ou = `Exercice ${ei + 1}${sec.titre ? ` — ${sec.titre}` : ''}`
+
+      // Un mot d'une liste de LECTURE doit porter le son travaillé. On exclut
+      // les exercices "inline" : ce sont des suites de graphies à trier
+      // (aill – euil – ail…), où l'absence du graphème est le principe même.
+      const listeDeMots = ex.type === 'liste' && ex.disposition !== 'inline'
+      if (g && listeDeMots) {
+        for (const it of ex.items ?? []) {
+          const mot = delier(it.texte).trim()
+          if (mot.length >= 4 && !mot.includes(g)) {
+            points.push({ ou, extrait: it.texte, raison: `ne contient pas « ${sec.grapheme} » alors que la feuille travaille ce son` })
+          }
+        }
+        for (const mot of ex.banque ?? []) {
+          if (delier(mot).trim().length >= 4 && !delier(mot).includes(g)) {
+            points.push({ ou, extrait: mot, raison: `ne contient pas « ${sec.grapheme} » alors que la feuille travaille ce son` })
+          }
+        }
+      }
+
+      // Deux options dont l'une préfixe l'autre : souvent une lettre mal lue.
+      for (const it of ex.items ?? []) {
+        if (ex.type !== 'choix' || (it.choix ?? []).length !== 2) continue
+        const [a, b] = it.choix.map(c => delier(c).trim())
+        if (a && b && (a.startsWith(b) || b.startsWith(a))) {
+          points.push({ ou, extrait: `( ${it.choix.join(' – ')} )`, raison: 'une option est le préfixe de l\'autre — vérifiez qu\'il ne s\'agit pas d\'une mauvaise lecture' })
+        }
+      }
+    })
+  })
+  return points
+}
+
+/**
  * Contrôles structurels post-extraction. Retourne une liste d'anomalies.
  * Ce sont des faits vérifiables, pas des jugements de qualité.
  */

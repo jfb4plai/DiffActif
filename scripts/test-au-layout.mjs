@@ -7,7 +7,7 @@
  */
 import { readFileSync } from 'node:fs'
 import { renderAu, BLANC } from '../src/lib/auLayout.js'
-import { validerDoc } from '../api/_docSchema.js'
+import { validerDoc, pointsAVerifier } from '../api/_docSchema.js'
 import { motPictoValide, validerPictos } from '../src/lib/pictoGuard.js'
 import { findDegenerateChoices, countBlanks } from '../api/_blanks.js'
 
@@ -104,6 +104,27 @@ const complete = JSON.parse(JSON.stringify(doc))
 complete.sections[1].exercices[2].items[1].amorce = 'une coquille'
 test('une réponse recopiée dans l\'amorce est détectée',
   validerDoc(complete).some(a => a.includes('a probablement été complétée')))
+
+// ── Points à relire : doivent rester silencieux sur un document juste ──
+const copie = () => JSON.parse(JSON.stringify(doc))
+test('aucun point à relire sur un document fidèle', pointsAVerifier(doc).length === 0,
+  pointsAVerifier(doc).map(p => p.extrait).join(' | '))
+
+const horsFamille = copie()
+horsFamille.sections[1].exercices[0].items[2].texte = 'la chemise'
+test('un mot hors de la famille phonologique est signalé',
+  pointsAVerifier(horsFamille).some(p => p.extrait === 'la chemise'))
+
+const prefixe = copie()
+prefixe.sections[0].exercices[2].items[1].choix = ['peur', 'peureux']
+test('deux options dont l\'une préfixe l\'autre sont signalées',
+  pointsAVerifier(prefixe).some(p => p.raison.includes('préfixe')))
+
+test('la ligature œ ne crée pas de faux positif',
+  !pointsAVerifier(doc).some(p => p.extrait === 'œuf'))
+
+test('les suites de graphies à entourer ne sont pas signalées',
+  !pointsAVerifier(doc).some(p => ['euil', 'ail', 'ouil'].includes(p.extrait)))
 
 console.log(`\n${echecs === 0 ? 'Tous les contrôles passent.' : echecs + ' contrôle(s) en échec.'}`)
 process.exit(echecs === 0 ? 0 : 1)
